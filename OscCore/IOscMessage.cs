@@ -7,11 +7,11 @@ namespace OscCore
 {
     public interface IOscMessage
     {
-        string Address { get; }
+        string? Address { get; }
 
         int Count { get; }
 
-        Uri Origin { get; }
+        Uri? Origin { get; }
 
         OscTimeTag? Timestamp { get; }
     }

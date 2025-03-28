@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -9,29 +10,26 @@ using System.Text;
 
 namespace OscCore.LowLevel
 {
-    public class OscWriter
+    public struct OscWriter
     {
-        private static readonly bool IsLittleEndian;
-        private readonly byte[] argumentBuffer;
+        private OscArgumentBuffer argumentBuffer;
         private int argumentBufferCount;
 
-        private readonly MemoryStream buffer;
+        private readonly ArraySegment<byte> buffer;
         private int count;
-        private BitFlipper32 flipper32;
+
+        /// <summary>
+        /// The writer's position in the buffer.
+        /// </summary>
+        public int Position { get; set; }
 
         private WriterState state;
 
-        static OscWriter()
+        public OscWriter(ArraySegment<byte> buffer)
         {
-            IsLittleEndian = BitConverter.IsLittleEndian;
-        }
-
-        public OscWriter(MemoryStream buffer)
-        {
-            flipper32 = new BitFlipper32();
-
-            this.buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
-            argumentBuffer = new byte[16];
+            this.buffer = buffer;
+            if (buffer.Array == null)
+                throw new ArgumentNullException(nameof(buffer));
             argumentBufferCount = 0;
             count = 0;
             state = WriterState.NotStarted;
@@ -46,11 +44,11 @@ namespace OscCore.LowLevel
             WriteDirect(Encoding.UTF8.GetBytes(ident));
 
             // write null terminator
-            Write((byte) 0);
+            Write((byte)0);
 
             WritePadding();
 
-            Write(unchecked((long) timestamp.Value));
+            Write(unchecked((long)timestamp.Value));
             Flush();
         }
 
@@ -60,6 +58,7 @@ namespace OscCore.LowLevel
             state = WriterState.Address;
             count = 0;
             argumentBufferCount = 0;
+            //Position = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -71,12 +70,12 @@ namespace OscCore.LowLevel
             WriteDirect(Encoding.UTF8.GetBytes(address));
 
             // write null terminator
-            Write((byte) 0);
+            Write((byte)0);
 
             WritePadding();
 
             // write the comma for the type-tag
-            Write((byte) ',');
+            Write((byte)',');
 
             Flush();
 
@@ -109,7 +108,7 @@ namespace OscCore.LowLevel
             Flush();
 
             // write bytes 
-            WriteDirect(buffer.Array, buffer.Offset, buffer.Count);
+            WriteDirect(buffer);
 
             WritePadding();
             Flush();
@@ -128,9 +127,9 @@ namespace OscCore.LowLevel
             CheckWriterState(WriterState.Arguments);
 
             Write(value);
-            Write((byte) 0);
-            Write((byte) 0);
-            Write((byte) 0);
+            Write((byte)0);
+            Write((byte)0);
+            Write((byte)0);
 
             Flush();
         }
@@ -154,9 +153,7 @@ namespace OscCore.LowLevel
         public void WriteDouble(double value)
         {
             CheckWriterState(WriterState.Arguments);
-
             Write(BitConverter.DoubleToInt64Bits(value));
-
             Flush();
         }
 
@@ -164,11 +161,7 @@ namespace OscCore.LowLevel
         public void WriteFloat(float value)
         {
             CheckWriterState(WriterState.Arguments);
-
-            flipper32.ValueFloat = value;
-
-            Write(flipper32.ValueInt32);
-
+            Write(BitConverter.SingleToInt32Bits(value));
             Flush();
         }
 
@@ -197,7 +190,7 @@ namespace OscCore.LowLevel
         {
             CheckWriterState(WriterState.Arguments);
 
-            Write(unchecked((int) value.FullMessage));
+            Write(unchecked((int)value.FullMessage));
 
             Flush();
         }
@@ -210,7 +203,7 @@ namespace OscCore.LowLevel
             // write the address
             WriteDirect(Encoding.UTF8.GetBytes(value));
             // write null terminator
-            Write((byte) 0);
+            Write((byte)0);
 
             WritePadding();
             Flush();
@@ -224,7 +217,7 @@ namespace OscCore.LowLevel
             // write the address
             WriteDirect(Encoding.UTF8.GetBytes(value.Value));
             // write null terminator
-            Write((byte) 0);
+            Write((byte)0);
 
             WritePadding();
             Flush();
@@ -235,7 +228,7 @@ namespace OscCore.LowLevel
         {
             CheckWriterState(WriterState.Arguments);
 
-            Write(unchecked((long) value.Value));
+            Write(unchecked((long)value.Value));
 
             Flush();
         }
@@ -250,55 +243,55 @@ namespace OscCore.LowLevel
             switch (token)
             {
                 case OscToken.Char:
-                    Write((byte) 'c');
+                    Write((byte)'c');
                     break;
                 case OscToken.True:
-                    Write((byte) 'T');
+                    Write((byte)'T');
                     break;
                 case OscToken.False:
-                    Write((byte) 'F');
+                    Write((byte)'F');
                     break;
                 case OscToken.String:
-                    Write((byte) 's');
+                    Write((byte)'s');
                     break;
                 case OscToken.Symbol:
-                    Write((byte) 'S');
+                    Write((byte)'S');
                     break;
                 case OscToken.Impulse:
-                    Write((byte) 'I');
+                    Write((byte)'I');
                     break;
                 case OscToken.Null:
-                    Write((byte) 'N');
+                    Write((byte)'N');
                     break;
                 case OscToken.Int:
-                    Write((byte) 'i');
+                    Write((byte)'i');
                     break;
                 case OscToken.Long:
-                    Write((byte) 'h');
+                    Write((byte)'h');
                     break;
                 case OscToken.Float:
-                    Write((byte) 'f');
+                    Write((byte)'f');
                     break;
                 case OscToken.Double:
-                    Write((byte) 'd');
+                    Write((byte)'d');
                     break;
                 case OscToken.TimeTag:
-                    Write((byte) 't');
+                    Write((byte)'t');
                     break;
                 case OscToken.Blob:
-                    Write((byte) 'b');
+                    Write((byte)'b');
                     break;
                 case OscToken.Color:
-                    Write((byte) 'r');
+                    Write((byte)'r');
                     break;
                 case OscToken.Midi:
-                    Write((byte) 'm');
+                    Write((byte)'m');
                     break;
                 case OscToken.ArrayStart:
-                    Write((byte) '[');
+                    Write((byte)'[');
                     break;
                 case OscToken.ArrayEnd:
-                    Write((byte) ']');
+                    Write((byte)']');
                     break;
                 default:
                     throw new OscException(OscError.UnexpectedToken, $"Unexpected token {token}");
@@ -311,7 +304,7 @@ namespace OscCore.LowLevel
             CheckWriterState(WriterState.TypeTag);
 
             // write null terminator
-            Write((byte) 0);
+            Write((byte)0);
 
             WritePadding();
             Flush();
@@ -320,7 +313,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int CalculatePadding()
+        private readonly int CalculatePadding()
         {
             int nullCount = 4 - count % 4;
 
@@ -328,7 +321,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CheckWriterState(WriterState requiredState)
+        private readonly void CheckWriterState(WriterState requiredState)
         {
             if (state != requiredState)
             {
@@ -344,7 +337,8 @@ namespace OscCore.LowLevel
                 return;
             }
 
-            buffer.Write(argumentBuffer, 0, argumentBufferCount);
+            argumentBuffer.Bytes[..argumentBufferCount].CopyTo(buffer.AsSpan(Position));
+            Position += argumentBufferCount;
             argumentBufferCount = 0;
         }
 
@@ -367,65 +361,35 @@ namespace OscCore.LowLevel
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Write(int value)
         {
-            if (IsLittleEndian)
-            {
-                uint uValue = unchecked((uint) value);
+            int dataSize = Unsafe.SizeOf<int>();
+            if (argumentBufferCount + dataSize > argumentBuffer.Length)
+                throw new IndexOutOfRangeException();
 
-                for (int i = 0; i < 4; i++)
-                {
-                    argumentBuffer[argumentBufferCount++] = unchecked((byte) (((uValue & 0xff000000) >> 24) & 0xff));
-                    uValue = uValue << 8;
-                    count++;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    argumentBuffer[argumentBufferCount++] = unchecked((byte) (value & 0xff));
-                    value = value >> 8;
-                    count++;
-                }
-            }
+            value = BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value;
+            Unsafe.WriteUnaligned(ref argumentBuffer[argumentBufferCount], value);
+            argumentBufferCount += dataSize;
+            count += dataSize;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Write(long value)
         {
-            if (IsLittleEndian)
-            {
-                ulong uValue = unchecked((ulong) value);
+            int dataSize = Unsafe.SizeOf<long>();
+            if (argumentBufferCount + dataSize > argumentBuffer.Length)
+                throw new IndexOutOfRangeException();
 
-                for (int i = 0; i < 8; i++)
-                {
-                    argumentBuffer[argumentBufferCount++] = unchecked((byte) (((uValue & 0xff00000000000000) >> 56) & 0xff));
-                    uValue = uValue << 8;
-                    count++;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < 8; i++)
-                {
-                    argumentBuffer[argumentBufferCount++] = unchecked((byte) (value & 0xff));
-                    value = value >> 8;
-                    count++;
-                }
-            }
+            value = BitConverter.IsLittleEndian ? BinaryPrimitives.ReverseEndianness(value) : value;
+            Unsafe.WriteUnaligned(ref argumentBuffer[argumentBufferCount], value);
+            argumentBufferCount += dataSize;
+            count += dataSize;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteDirect(byte[] bytes)
+        private void WriteDirect(ReadOnlySpan<byte> bytes)
         {
-            buffer.Write(bytes, 0, bytes.Length);
+            bytes.CopyTo(buffer.AsSpan(Position));
+            Position += bytes.Length;
             count += bytes.Length;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void WriteDirect(byte[] bytes, int index, int count)
-        {
-            buffer.Write(bytes, index, count);
-            this.count += count;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -447,13 +411,20 @@ namespace OscCore.LowLevel
             TypeTag,
             Arguments
         }
+    }
 
-        [StructLayout(LayoutKind.Explicit)]
-        private struct BitFlipper32
-        {
-            [FieldOffset(0)] public readonly int ValueInt32;
+    [StructLayout(LayoutKind.Explicit)]
+    internal struct OscArgumentBuffer
+    {
+        [FieldOffset(0x0)] public ulong a;
+        [FieldOffset(0x8)] public ulong b;
 
-            [FieldOffset(0)] public float ValueFloat;
-        }
+        // Maybe not the fastest, but probably not that bad...
+        // I guess we could just ref struct the whole thing and cache this span...
+        public ref byte this[int index] => ref MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref this, 1))[index];
+
+        public readonly int Length => 16;
+
+        public ReadOnlySpan<byte> Bytes => MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref this, 1));
     }
 }

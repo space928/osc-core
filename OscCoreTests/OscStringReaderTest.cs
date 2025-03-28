@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Tilde Love Project. All rights reserved.
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using OscCore.LowLevel;
 using Xunit;
 
@@ -18,10 +20,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
 
         [Fact]
@@ -33,10 +35,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
 
         [Fact]
@@ -48,10 +50,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
 
 //        [Fact]
@@ -78,10 +80,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
 
         [Fact]
@@ -93,10 +95,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
 
         [Fact]
@@ -108,10 +110,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
 
         [Fact]
@@ -123,10 +125,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
 
         [Fact]
@@ -138,10 +140,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
 
         [Fact]
@@ -218,10 +220,10 @@ namespace OscCoreTests
 
                 do
                 {
-                    token = reader.ReadNextToken(out string value);
+                    token = reader.ReadNextToken(out var value);
 
                     Assert.Equal(expectedTokens[index], token);
-                    Assert.Equal(expectedValues[index], value);
+                    Assert.True(value.SequenceEqual(expectedValues[index]));
 
                     index++;
                 }
@@ -238,10 +240,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
         
         [Fact]
@@ -253,10 +255,10 @@ namespace OscCoreTests
 
             OscStringReader reader = new OscStringReader(original);
 
-            OscSerializationToken token = reader.ReadNextToken(out string value);
+            OscSerializationToken token = reader.ReadNextToken(out var value);
 
             Assert.Equal(expectedToken, token);
-            Assert.Equal(expectedValue, value);
+            Assert.True(value.SequenceEqual(expectedValue));
         }
     }
 }

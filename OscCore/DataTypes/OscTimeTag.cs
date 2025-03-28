@@ -13,7 +13,7 @@ namespace OscCore
     public struct OscTimeTag
     {
         private static readonly string[] Formats =
-        {
+        [
             "dd-MM-yy",
             "dd-MM-yyyy",
             "HH:mm",
@@ -22,12 +22,12 @@ namespace OscCore
             "dd-MM-yyyy HH:mm:ss",
             "dd-MM-yyyy HH:mm",
             "dd-MM-yyyy HH:mm:ss.ffff"
-        };
+        ];
 
         /// <summary>
         ///     The minimum date for any OSC time tag.
         /// </summary>
-        public static readonly DateTime BaseDate = new DateTime(1900, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        public static readonly DateTime BaseDate = new(1900, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
         ///     Gets a OscTimeTag object that is set to the current date and time on this computer, expressed as the local time.
@@ -51,17 +51,17 @@ namespace OscCore
         ///     Gets the number of seconds since midnight on January 1, 1900. This is the first 32 bits of the 64 bit fixed point
         ///     OSC time tag value.
         /// </summary>
-        public uint Seconds => (uint) ((Value & 0xFFFFFFFF00000000) >> 32);
+        public readonly uint Seconds => (uint) ((Value & 0xFFFFFFFF00000000) >> 32);
 
         /// <summary>
         ///     Gets the fractional parts of a second. This is the 32 bits of the 64 bit fixed point OSC time tag value.
         /// </summary>
-        public uint Fraction => (uint) (Value & 0xFFFFFFFF);
+        public readonly uint Fraction => (uint) (Value & 0xFFFFFFFF);
 
         /// <summary>
         ///     Gets the number of seconds including fractional parts since midnight on January 1, 1900.
         /// </summary>
-        public decimal SecondsDecimal => Seconds + (decimal) (Fraction / (double) uint.MaxValue);
+        public readonly decimal SecondsDecimal => Seconds + (decimal) (Fraction / (double) uint.MaxValue);
 
         /// <summary>
         ///     Build a OSC time tag from a NTP 64 bit integer.
@@ -77,12 +77,10 @@ namespace OscCore
         /// </summary>
         /// <param name="obj">An object.</param>
         /// <returns>True if the objects are the same.</returns>
-        public override bool Equals(object obj)
+        public override readonly bool Equals(object obj)
         {
-            if (obj is OscTimeTag)
-            {
-                return Value.Equals(((OscTimeTag) obj).Value);
-            }
+            if (obj is OscTimeTag tag)
+                return Value == tag.Value;
 
             return Value.Equals(obj);
         }
@@ -91,7 +89,7 @@ namespace OscCore
         ///     Gets a hashcode for this OSC time tag.
         /// </summary>
         /// <returns>A hashcode.</returns>
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             return Value.GetHashCode();
         }
@@ -100,7 +98,7 @@ namespace OscCore
         ///     Get a string of this OSC time tag in the format "dd-MM-yyyy HH:mm:ss.ffffZ".
         /// </summary>
         /// <returns>The string value of this OSC time tag.</returns>
-        public override string ToString()
+        public readonly override string ToString()
         {
             return ToDataTime()
                 .ToString("dd-MM-yyyy HH:mm:ss.ffffZ");
@@ -112,7 +110,7 @@ namespace OscCore
         ///     Get the equivalent date-time value from the OSC time tag.
         /// </summary>
         /// <returns>the equivalent value as a date-time</returns>
-        public DateTime ToDataTime()
+        public readonly DateTime ToDataTime()
         {
             // Kas: http://stackoverflow.com/questions/5206857/convert-ntp-timestamp-to-utc
 
@@ -156,14 +154,14 @@ namespace OscCore
 
         #region Parse
 
-        public static OscTimeTag Parse(ref OscStringReader reader, IFormatProvider provider)
+        public static OscTimeTag Parse(ref OscStringReader reader, IFormatProvider? provider)
         {
-            if (reader.ReadNextToken(out string str) != OscSerializationToken.Literal)
+            if (reader.ReadNextToken(out var str) != OscSerializationToken.Literal)
             {
                 throw new Exception(@"Invalid osc-timetag string");
             }
 
-            if (reader.ReadNextToken(out string _) != OscSerializationToken.ObjectEnd)
+            if (reader.ReadNextToken(out var _) != OscSerializationToken.ObjectEnd)
             {
                 throw new Exception(@"Invalid osc-timetag string");
             }
@@ -185,7 +183,7 @@ namespace OscCore
             }
 
             if (str.StartsWith("0x") &&
-                ulong.TryParse(str.Substring(2), NumberStyles.HexNumber, provider, out ulong value))
+                ulong.TryParse(str[2..], NumberStyles.HexNumber, provider, out ulong value))
             {
                 return new OscTimeTag(value);
             }
@@ -195,7 +193,7 @@ namespace OscCore
                 return new OscTimeTag(value);
             }
 
-            throw new Exception($@"Invalid osc-timetag string ""{str}""");
+            throw new Exception($@"Invalid osc-timetag string ""{str.ToString()}""");
 
             //return new OscTimeTag(0); 
 
@@ -233,36 +231,27 @@ namespace OscCore
         /// <param name="str">String to parse.</param>
         /// <param name="provider">Format provider</param>
         /// <returns>The parsed time tag.</returns>
-        public static OscTimeTag Parse(string str, IFormatProvider provider)
+        public static OscTimeTag Parse(ReadOnlySpan<char> str, IFormatProvider? provider)
         {
             DateTimeStyles style = DateTimeStyles.AdjustToUniversal;
 
-            if (str.Trim()
-                .EndsWith("Z"))
+            if (str.Trim().EndsWith("Z"))
             {
-                style = DateTimeStyles.AssumeUniversal;
+                style |= DateTimeStyles.AssumeUniversal;
 
-                str = str.Trim()
-                    .TrimEnd('Z');
+                str = str.Trim().TrimEnd('Z');
             }
 
             if (DateTime.TryParseExact(str, Formats, provider, style, out DateTime datetime))
-            {
                 return FromDataTime(datetime);
-            }
 
-            if (str.StartsWith("0x") &&
-                ulong.TryParse(str.Substring(2), NumberStyles.HexNumber, provider, out ulong value))
-            {
+            if (str.StartsWith("0x") && ulong.TryParse(str[2..], NumberStyles.HexNumber, provider, out ulong value))
                 return new OscTimeTag(value);
-            }
 
             if (ulong.TryParse(str, NumberStyles.Integer, provider, out value))
-            {
                 return new OscTimeTag(value);
-            }
 
-            throw new Exception($@"Invalid osc-timetag string ""{str}""");
+            throw new Exception($@"Invalid osc-timetag string ""{str.ToString()}""");
         }
 
         /// <summary>
@@ -270,7 +259,7 @@ namespace OscCore
         /// </summary>
         /// <param name="str">String to parse.</param>
         /// <returns>The parsed time tag.</returns>
-        public static OscTimeTag Parse(string str)
+        public static OscTimeTag Parse(ReadOnlySpan<char> str)
         {
             return Parse(str, CultureInfo.InvariantCulture);
         }
@@ -282,7 +271,7 @@ namespace OscCore
         /// <param name="provider">Format provider.</param>
         /// <param name="value">The parsed time tag.</param>
         /// <returns>True if parsed else false.</returns>
-        public static bool TryParse(string str, IFormatProvider provider, out OscTimeTag value)
+        public static bool TryParse(ReadOnlySpan<char> str, IFormatProvider provider, out OscTimeTag value)
         {
             try
             {
@@ -292,7 +281,7 @@ namespace OscCore
             }
             catch
             {
-                value = default(OscTimeTag);
+                value = default;
 
                 return false;
             }
@@ -304,7 +293,7 @@ namespace OscCore
         /// <param name="str">String to parse.</param>
         /// <param name="value">The parsed time tag.</param>
         /// <returns>True if parsed else false.</returns>
-        public static bool TryParse(string str, out OscTimeTag value)
+        public static bool TryParse(ReadOnlySpan<char> str, out OscTimeTag value)
         {
             try
             {
@@ -314,7 +303,7 @@ namespace OscCore
             }
             catch
             {
-                value = default(OscTimeTag);
+                value = default;
 
                 return false;
             }

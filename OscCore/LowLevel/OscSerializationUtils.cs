@@ -2,7 +2,9 @@
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace OscCore.LowLevel
@@ -211,7 +213,7 @@ namespace OscCore.LowLevel
         /// </summary>
         /// <param name="str">a string, optionally with escape sequences in it</param>
         /// <returns>a byte array</returns>
-        public static string Unescape(string str)
+        public static string Unescape(ReadOnlySpan<char> str)
         {
             int count = 0;
             bool isEscaped = false;
@@ -229,14 +231,7 @@ namespace OscCore.LowLevel
                     parseHexCount++;
 
                     if (IsHexChar(c) == false)
-                    {
                         throw new Exception($@"Invalid escape sequence at char '{i}' ""{c}"" is not a valid hex digit.");
-                    }
-                    
-//                    if (Uri.IsHexDigit(c) == false)
-//                    {
-//                        throw new Exception($@"Invalid escape sequence at char '{i}' ""{c}"" is not a valid hex digit.");
-//                    }
 
                     if (parseHexCount == 2)
                     {
@@ -294,22 +289,22 @@ namespace OscCore.LowLevel
             }
 
             if (parseHexNext)
-            {
                 throw new Exception($"Invalid escape sequence at char '{str.Length - 1}' missing hex value.");
-            }
 
             if (isEscaped)
-            {
                 throw new Exception($"Invalid escape sequence at char '{str.Length - 1}'.");
-            }
-
+            
             // reset the escape state
-//            isEscaped = false;
-//            parseHexNext = false;
-//            parseHexCount = 0;
+            //            isEscaped = false;
+            //            parseHexNext = false;
+            //            parseHexCount = 0;
 
             // create a byte array for the result
-            char[] chars = new char[count];
+            Span<char> chars = stackalloc char[0];
+            if (count <= 1024)
+                chars = stackalloc char[count];
+            else
+                chars = new char[count];
 
             int j = 0;
 
@@ -385,8 +380,16 @@ namespace OscCore.LowLevel
                 }
             }
 
+            return chars.ToString();//new string(chars);
+        }
 
-            return new string(chars);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte ByteFromHex(ReadOnlySpan<char> hex)
+        {
+            if (hex.Length != 2)
+                throw new ArgumentOutOfRangeException(nameof(hex));
+
+            return unchecked((byte)((FromHex(hex[0]) << 4) + FromHex(hex[1])));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -414,6 +417,67 @@ namespace OscCore.LowLevel
             }
             
             throw new ArgumentException("digit is not a valid hexadecimal digit (0-9, a-f, A-F).", nameof(digit));
+        }
+
+        /// <summary>
+        /// Compute the number of bytes encoded in the specified Base 64 char array:
+        /// Walk the entire input counting white spaces and padding chars, then compute result length
+        /// based on 3 bytes per 4 chars.
+        /// 
+        /// The input must not have any extraneous whitespace.
+        /// </summary>
+        /// <remarks>Ported from src/libraries/System.Private.CoreLib/src/System/Convert.cs</remarks>
+        internal static int FromBase64_ComputeResultLength(ReadOnlySpan<char> input)
+        {
+            const uint intEq = (uint)'=';
+            const uint intSpace = (uint)' ';
+
+            Debug.Assert(0 <= input.Length);
+
+            //char* inputEndPtr = inputPtr + inputLength;
+            int usefulInputLength = input.Length;
+            int padding = 0;
+
+            var inputUints = MemoryMarshal.Cast<char, uint>(input);
+
+            foreach (uint c in inputUints)
+            //while (inputPtr < inputEndPtr)
+            {
+                /*uint c = (uint)(*inputPtr);
+                inputPtr++;*/
+
+                // We want to be as fast as possible and filter out spaces with as few comparisons as possible.
+                // We end up accepting a number of illegal chars as legal white-space chars.
+                // This is ok: as soon as we hit them during actual decode we will recognise them as illegal and throw.
+                if (c <= intSpace)
+                    usefulInputLength--;
+                else if (c == intEq)
+                {
+                    usefulInputLength--;
+                    padding++;
+                }
+            }
+
+            Debug.Assert(0 <= usefulInputLength);
+
+            // For legal input, we can assume that 0 <= padding < 3. But it may be more for illegal input.
+            // We will notice it at decode when we see a '=' at the wrong place.
+            Debug.Assert(0 <= padding);
+
+            // Perf: reuse the variable that stored the number of '=' to store the number of bytes encoded by the
+            // last group that contains the '=':
+            if (padding != 0)
+            {
+                if (padding == 1)
+                    padding = 2;
+                else if (padding == 2)
+                    padding = 1;
+                else
+                    throw new FormatException("Bad base64 character!");
+            }
+
+            // Done:
+            return (usefulInputLength / 4) * 3 + padding;
         }
     }
 }

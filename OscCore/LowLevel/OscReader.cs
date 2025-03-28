@@ -9,19 +9,17 @@ using System.Text;
 
 namespace OscCore.LowLevel
 {
-    public class OscReader
+    public struct OscReader
     {
-        private static readonly bool IsLittleEndian;
         private readonly ArraySegment<byte> buffer;
         private OscToken currentToken;
-        private BitFlipper32 flipper32;
         private int maxPosition;
 
         public int Position { get; set; }
 
         static OscReader()
         {
-            IsLittleEndian = BitConverter.IsLittleEndian;
+
         }
 
         public OscReader(ArraySegment<byte> buffer)
@@ -33,7 +31,6 @@ namespace OscCore.LowLevel
 
             this.buffer = buffer;
             currentToken = OscToken.OscAddress;
-            flipper32 = new BitFlipper32();
             Position = 0;
             maxPosition = buffer.Count;
         }
@@ -61,13 +58,13 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetArgumentCount(ref OscTypeTag typeTag, out OscToken arrayType)
+        public readonly int GetArgumentCount(ref OscTypeTag typeTag, out OscToken arrayType)
         {
             return typeTag.GetArgumentCount(out arrayType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetBlobArgumentSize(int position)
+        public readonly int GetBlobArgumentSize(int position)
         {
             int result = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + position));
 
@@ -75,7 +72,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetStringArgumentSize(int position)
+        public readonly int GetStringArgumentSize(int position)
         {
             int stringStart = position;
             bool failed = true;
@@ -84,9 +81,7 @@ namespace OscCore.LowLevel
             while (position < maxPosition)
             {
                 if (buffer.Array[buffer.Offset + position++] != 0)
-                {
                     continue;
-                }
 
                 failed = false;
 
@@ -94,21 +89,19 @@ namespace OscCore.LowLevel
             }
 
             if (failed)
-            {
                 throw new OscException(OscError.ErrorParsingString, @"Terminator could not be found while parsing getting string length");
-            }
 
             return position - stringStart + CalculatePadding(position);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte PeekByte()
+        public readonly byte PeekByte()
         {
             return buffer.Array[buffer.Offset + Position];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public OscToken PeekToken()
+        public readonly OscToken PeekToken()
         {
             return currentToken;
         }
@@ -125,9 +118,7 @@ namespace OscCore.LowLevel
             while (Position < maxPosition)
             {
                 if (buffer.Array[buffer.Offset + Position++] != 0)
-                {
                     continue;
-                }
 
                 failed = false;
 
@@ -142,18 +133,14 @@ namespace OscCore.LowLevel
 
             // check for an empty string
             if (Position - start - 1 == 0)
-            {
                 throw new OscException(OscError.MissingAddress, "Address was empty");
-            }
 
             // read the string 
             string result = Encoding.UTF8.GetString(buffer.Array, buffer.Offset + start, Position - start - 1);
 
             // Advance to the typetag
             if (SkipPadding() == false)
-            {
                 throw new OscException(OscError.InvalidSegmentLength, "Unexpected end of message");
-            }
 
             currentToken = Position == buffer.Count ? OscToken.End : OscToken.TypeTag;
 
@@ -167,71 +154,47 @@ namespace OscCore.LowLevel
         /// <returns>the argument value boxed as an object.</returns>
         /// <exception cref="OscException">If the current token is not an argument token.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public object ReadArgument(ref OscTypeTag typeTag)
+        public object? ReadArgument(ref OscTypeTag typeTag)
         {
-            switch (currentToken)
+            return currentToken switch
             {
-                case OscToken.Char:
-                    return ReadChar(ref typeTag);
-                case OscToken.Bool:
-                case OscToken.True:
-                case OscToken.False:
-                    return ReadBool(ref typeTag);
-                case OscToken.String:
-                    return ReadString(ref typeTag);
-                case OscToken.Symbol:
-                    return ReadSymbol(ref typeTag);
-                case OscToken.Impulse:
-                    return ReadImpulse(ref typeTag);
-                case OscToken.Null:
-                    return ReadNull(ref typeTag);
-                case OscToken.Int:
-                    return ReadInt(ref typeTag);
-                case OscToken.Long:
-                    return ReadLong(ref typeTag);
-                case OscToken.Float:
-                    return ReadFloat(ref typeTag);
-                case OscToken.Double:
-                    return ReadDouble(ref typeTag);
-                case OscToken.TimeTag:
-                    return ReadTimeTag(ref typeTag);
-                case OscToken.Blob:
-                    return ReadBlob(ref typeTag)
-                        .ToArray();
-                case OscToken.Color:
-                    return ReadColor(ref typeTag);
-                case OscToken.Midi:
-                    return ReadMidi(ref typeTag);
-                default:
-                    throw new OscException(OscError.UnexpectedToken, $"Expected aregument token got {currentToken}");
-            }
+                OscToken.Char => ReadChar(ref typeTag),
+                OscToken.Bool or OscToken.True or OscToken.False => ReadBool(ref typeTag),
+                OscToken.String => ReadString(ref typeTag),
+                OscToken.Symbol => ReadSymbol(ref typeTag),
+                OscToken.Impulse => ReadImpulse(ref typeTag),
+                OscToken.Null => ReadNull(ref typeTag),
+                OscToken.Int => ReadInt(ref typeTag),
+                OscToken.Long => ReadLong(ref typeTag),
+                OscToken.Float => ReadFloat(ref typeTag),
+                OscToken.Double => ReadDouble(ref typeTag),
+                OscToken.TimeTag => ReadTimeTag(ref typeTag),
+                OscToken.Blob => ReadBlob(ref typeTag).ToArray(),
+                OscToken.Color => ReadColor(ref typeTag),
+                OscToken.Midi => ReadMidi(ref typeTag),
+                _ => throw new OscException(OscError.UnexpectedToken, $"Expected aregument token got {currentToken}"),
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ArraySegment<byte> ReadBlob(ref OscTypeTag typeTag)
         {
             CheckToken(OscToken.Blob);
-
             CheckForPacketEnd(OscError.ErrorParsingBlob, 4);
 
-            uint length = unchecked((uint) ReadIntDirect()); // unchecked ((uint) IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + Position)));
-
+            uint length = unchecked((uint) ReadDirectInt());
+            Position += 4;
 
             // this shouldn't happen and means we're decoding rubbish
             if (length > 0 && Position + length > maxPosition)
-            {
                 throw new OscException(OscError.ErrorParsingBlob, $"Unexpected end of message while parsing argument '{typeTag.Index}'");
-            }
 
-            ArraySegment<byte> segment = new ArraySegment<byte>(buffer.Array, buffer.Offset + Position, (int) length);
-
+            ArraySegment<byte> segment = buffer.Slice(Position, (int)length);
             Position += (int) length;
 
             // Advance pass the padding
             if (SkipPadding() == false)
-            {
                 throw new OscException(OscError.ErrorParsingBlob, $"Unexpected end of message while parsing argument '{typeTag.Index}'");
-            }
 
             currentToken = typeTag.NextToken();
 
@@ -244,7 +207,6 @@ namespace OscCore.LowLevel
             CheckToken(OscToken.Bool);
 
             bool result = currentToken == OscToken.True;
-
             currentToken = typeTag.NextToken();
 
             return result;
@@ -256,11 +218,9 @@ namespace OscCore.LowLevel
             CheckToken(OscToken.BundleMessageLength);
 
             maxPosition = start + count;
-
             CheckForPacketEnd(OscError.ErrorParsingInt32, 4);
 
-            int result = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + Position));
-
+            int result = ReadDirectInt();
             Position += 4;
 
             return result;
@@ -273,8 +233,7 @@ namespace OscCore.LowLevel
 
             CheckForPacketEnd(OscError.ErrorParsingOscTimeTag, 8);
 
-            ulong result = unchecked((ulong) IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer.Array, buffer.Offset + Position)));
-
+            ulong result = unchecked((ulong)ReadDirectLong());
             Position += 8;
             currentToken = OscToken.BundleMessageLength;
 
@@ -303,7 +262,7 @@ namespace OscCore.LowLevel
 
             CheckForPacketEnd(OscError.ErrorParsingColor, 4);
 
-            uint value = unchecked((uint) IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + Position)));
+            uint value = unchecked((uint) ReadDirectInt());
 
             byte a, r, g, b;
 
@@ -323,7 +282,8 @@ namespace OscCore.LowLevel
         {
             CheckForPacketEnd(OscError.ErrorParsingBlob, 4);
 
-            uint length = unchecked((uint) ReadIntDirect());
+            uint length = unchecked((uint) ReadDirectInt());
+            Position += 4;
 
             // this shouldn't happen and means we're decoding rubbish
             if (length > 0 && Position + length > maxPosition)
@@ -335,7 +295,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte ReadDirectChar()
+        public readonly byte ReadDirectChar()
         {
             CheckForPacketEnd(OscError.ErrorParsingChar, 4);
 
@@ -343,7 +303,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public OscColor ReadDirectColor()
+        public readonly OscColor ReadDirectColor()
         {
             CheckForPacketEnd(OscError.ErrorParsingColor, 4);
 
@@ -360,7 +320,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public double ReadDirectDouble()
+        public readonly double ReadDirectDouble()
         {
             CheckForPacketEnd(OscError.ErrorParsingDouble, 8);
 
@@ -370,19 +330,17 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public float ReadDirectFloat()
+        public readonly float ReadDirectFloat()
         {
             CheckForPacketEnd(OscError.ErrorParsingSingle, 4);
 
             int value = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + Position));
 
-            flipper32.ValueInt32 = value;
-
-            return flipper32.ValueFloat;
+            return BitConverter.Int32BitsToSingle(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int ReadDirectInt()
+        public readonly int ReadDirectInt()
         {
             CheckForPacketEnd(OscError.ErrorParsingChar, 4);
 
@@ -390,7 +348,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public long ReadDirectLong()
+        public readonly long ReadDirectLong()
         {
             CheckForPacketEnd(OscError.ErrorParsingInt64, 8);
 
@@ -398,7 +356,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public OscMidiMessage ReadDirectMidi()
+        public readonly OscMidiMessage ReadDirectMidi()
         {
             CheckForPacketEnd(OscError.ErrorParsingInt32, 4);
 
@@ -416,21 +374,15 @@ namespace OscCore.LowLevel
             // scan forward and look for the end of the string 
             while (Position < maxPosition)
             {
-                if (buffer.Array[buffer.Offset + Position++] != 0)
+                if (buffer.Array[buffer.Offset + Position++] == 0)
                 {
-                    continue;
+                    failed = false;
+                    break;
                 }
-
-                failed = false;
-
-
-                break;
             }
 
             if (failed)
-            {
                 throw new OscException(OscError.ErrorParsingString, @"Terminator could not be found while parsing string");
-            }
 
             return Encoding.UTF8.GetString(buffer.Array, buffer.Offset + stringStart, Position - stringStart - 1);
         }
@@ -442,7 +394,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public OscTimeTag ReadDirectTimeTag()
+        public readonly OscTimeTag ReadDirectTimeTag()
         {
             CheckForPacketEnd(OscError.ErrorParsingOscTimeTag, 8);
 
@@ -455,11 +407,9 @@ namespace OscCore.LowLevel
         public double ReadDouble(ref OscTypeTag typeTag)
         {
             CheckToken(OscToken.Double);
-
             CheckForPacketEnd(OscError.ErrorParsingDouble, 8);
 
             long value = IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer.Array, buffer.Offset + Position));
-
             double result = BitConverter.Int64BitsToDouble(value);
 
             Position += 8;
@@ -472,14 +422,10 @@ namespace OscCore.LowLevel
         public float ReadFloat(ref OscTypeTag typeTag)
         {
             CheckToken(OscToken.Float);
-
             CheckForPacketEnd(OscError.ErrorParsingSingle, 4);
 
             int value = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + Position));
-
-            flipper32.ValueInt32 = value;
-
-            float result = flipper32.ValueFloat;
+            float result = BitConverter.Int32BitsToSingle(value);
 
             Position += 4;
             currentToken = typeTag.NextToken();
@@ -501,7 +447,6 @@ namespace OscCore.LowLevel
         public int ReadInt(ref OscTypeTag typeTag)
         {
             CheckToken(OscToken.Int);
-
             CheckForPacketEnd(OscError.ErrorParsingInt32, 4);
 
             int result = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + Position));
@@ -516,7 +461,6 @@ namespace OscCore.LowLevel
         public long ReadLong(ref OscTypeTag typeTag)
         {
             CheckToken(OscToken.Long);
-
             CheckForPacketEnd(OscError.ErrorParsingInt64, 8);
 
             long result = IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer.Array, buffer.Offset + Position));
@@ -531,10 +475,9 @@ namespace OscCore.LowLevel
         public OscMidiMessage ReadMidi(ref OscTypeTag typeTag)
         {
             CheckToken(OscToken.Midi);
-
             CheckForPacketEnd(OscError.ErrorParsingInt32, 4);
 
-            OscMidiMessage result = new OscMidiMessage(unchecked((uint) IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + Position))));
+            OscMidiMessage result = new(unchecked((uint) IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + Position))));
 
             Position += 4;
             currentToken = typeTag.NextToken();
@@ -553,15 +496,12 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public string ReadString(ref OscTypeTag typeTag)
+        public string? ReadString(ref OscTypeTag typeTag)
         {
             if (currentToken == OscToken.Null)
-            {
                 return null;
-            }
 
             CheckToken(OscToken.String);
-
             CheckForPacketEnd(OscError.ErrorParsingString, 4);
 
             return ReadStringInner(ref typeTag, OscError.ErrorParsingString);
@@ -571,7 +511,6 @@ namespace OscCore.LowLevel
         public OscSymbol ReadSymbol(ref OscTypeTag typeTag)
         {
             CheckToken(OscToken.Symbol);
-
             CheckForPacketEnd(OscError.ErrorParsingSymbol, 4);
 
             return new OscSymbol(ReadStringInner(ref typeTag, OscError.ErrorParsingSymbol));
@@ -581,7 +520,6 @@ namespace OscCore.LowLevel
         public OscTimeTag ReadTimeTag(ref OscTypeTag typeTag)
         {
             CheckToken(OscToken.TimeTag);
-
             CheckForPacketEnd(OscError.ErrorParsingOscTimeTag, 8);
 
             ulong result = unchecked((ulong) IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buffer.Array, buffer.Offset + Position)));
@@ -599,9 +537,7 @@ namespace OscCore.LowLevel
 
             // check that the next char is a comma                
             if ((char) buffer.Array[buffer.Offset + Position++] != ',')
-            {
                 throw new OscException(OscError.MissingComma, "No comma found");
-            }
 
             // mark the start of the type tag
             int start = Position;
@@ -621,23 +557,15 @@ namespace OscCore.LowLevel
                 }
 
                 if (inset == 0)
-                {
                     count++;
-                }
 
                 if (@char == '[')
-                {
                     inset++;
-                }
                 else if (@char == ']')
-                {
                     inset--;
-                }
 
                 if (inset < 0)
-                {
                     throw new OscException(OscError.MalformedTypeTag, "Malformed type tag");
-                }
             }
 
             if (failed)
@@ -646,6 +574,7 @@ namespace OscCore.LowLevel
                 throw new OscException(OscError.MissingTypeTag, "Type tag terminator could not be found");
             }
 
+            // It might be possible to avoid this alloc by pooling some buffers, but probably not worth it...
             // read the string 
             string result = Encoding.UTF8.GetString(buffer.Array, buffer.Offset + start, Position - start - 1);
 
@@ -655,8 +584,7 @@ namespace OscCore.LowLevel
                 throw new OscException(OscError.InvalidSegmentLength, "Unexpected end of message");
             }
 
-            OscTypeTag typeTag = new OscTypeTag(result);
-
+            OscTypeTag typeTag = new(result);
             currentToken = typeTag.CurrentToken;
 
             return typeTag;
@@ -668,62 +596,40 @@ namespace OscCore.LowLevel
             CheckToken(OscToken.ArrayStart);
 
             int length = typeTag.GetArrayElementCount(out arrayType);
-
             currentToken = typeTag.NextToken();
 
             return length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int CalculatePadding(int position)
+        private readonly int CalculatePadding(int position)
         {
             int nullCount = 4 - position % 4;
-
             return nullCount < 4 ? nullCount : 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CheckForPacketEnd(OscError error, int count)
+        private readonly void CheckForPacketEnd(OscError error, int count)
         {
             if (Position + count > maxPosition)
-            {
                 throw new OscException(error, "Unexpected end of message");
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         //[Conditional("MOOP")] 
-        private void CheckToken(OscToken expected)
+        private readonly void CheckToken(OscToken expected)
         {
             if (currentToken == expected)
-            {
                 return;
-            }
 
             if (expected == OscToken.Bool)
-            {
                 if (currentToken == OscToken.True || currentToken == OscToken.False)
-                {
                     return;
-                }
-            }
 
             if (expected == OscToken.BundleMessageLength && currentToken == OscToken.End)
-            {
                 return;
-            }
 
             throw new OscException(OscError.UnexpectedToken, $"Unexpected token {currentToken} expected {expected}");
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int ReadIntDirect()
-        {
-            int value = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buffer.Array, buffer.Offset + Position));
-
-            Position += 4;
-
-            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -736,9 +642,7 @@ namespace OscCore.LowLevel
             while (Position < maxPosition)
             {
                 if (buffer.Array[buffer.Offset + Position++] != 0)
-                {
                     continue;
-                }
 
                 failed = false;
 
@@ -747,17 +651,13 @@ namespace OscCore.LowLevel
             }
 
             if (failed)
-            {
                 throw new OscException(error, $@"Terminator could not be found while parsing argument '{typeTag.Index}'");
-            }
 
             string result = Encoding.UTF8.GetString(buffer.Array, buffer.Offset + stringStart, Position - stringStart - 1);
 
             // Advance pass the padding
             if (SkipPadding() == false)
-            {
                 throw new OscException(error, $"Unexpected end of message while parsing argument '{typeTag.Index}'");
-            }
 
             currentToken = typeTag.NextToken();
 
@@ -768,29 +668,17 @@ namespace OscCore.LowLevel
         private bool SkipPadding()
         {
             if (Position % 4 == 0)
-            {
                 return true;
-            }
 
             int newPosition = Position + (4 - Position % 4);
 
             // this shouldn't happen and means we're decoding rubbish
             if (newPosition > maxPosition)
-            {
                 return false;
-            }
 
             Position = newPosition;
 
             return true;
-        }
-
-        [StructLayout(LayoutKind.Explicit)]
-        private struct BitFlipper32
-        {
-            [FieldOffset(0)] public int ValueInt32;
-
-            [FieldOffset(0)] public readonly float ValueFloat;
         }
     }
 }

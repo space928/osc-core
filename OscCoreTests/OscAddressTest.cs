@@ -221,7 +221,7 @@ namespace OscCoreTests
             {
                 string address = UnitTestHelper.Good_AddressPatterns[i];
 
-                OscAddress result = new OscAddress(address);
+                OscAddress result = new(address);
 
                 Assert.Equal(address, UnitTestHelper.RebuildOscAddress(result)); // , $"Failed to parse address pattern {i} '{address}'");
             }
@@ -242,7 +242,7 @@ namespace OscCoreTests
                 string pattern = UnitTestHelper.Good_AddressPatterns[i];
                 string address = UnitTestHelper.Good_AddressPatternMatches[i];
 
-                OscAddress target = new OscAddress(pattern);
+                OscAddress target = new(pattern);
 
                 bool result = target.Match(address);
 

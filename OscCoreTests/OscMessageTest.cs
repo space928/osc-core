@@ -23,15 +23,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.MissingAddress);
+                Assert.Equal(OscError.MissingAddress, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -44,15 +44,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.MissingAddress);
+                Assert.Equal(OscError.MissingAddress, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -65,15 +65,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.ErrorParsingBlob);
+                Assert.Equal(OscError.ErrorParsingBlob, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -86,15 +86,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.ErrorParsingBlob);
+                Assert.Equal(OscError.ErrorParsingBlob, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -107,15 +107,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.ErrorParsingDouble);
+                Assert.Equal(OscError.ErrorParsingDouble, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -128,15 +128,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.ErrorParsingSingle);
+                Assert.Equal(OscError.ErrorParsingSingle, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -149,15 +149,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.ErrorParsingInt32);
+                Assert.Equal(OscError.ErrorParsingInt32, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -170,15 +170,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.ErrorParsingString);
+                Assert.Equal(OscError.ErrorParsingString, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -191,15 +191,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.ErrorParsingString);
+                Assert.Equal(OscError.ErrorParsingString, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -212,15 +212,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.MissingComma);
+                Assert.Equal(OscError.MissingComma, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -233,15 +233,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.MissingTypeTag);
+                Assert.Equal(OscError.MissingTypeTag, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -254,15 +254,15 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.InvalidSegmentLength);
+                Assert.Equal(OscError.InvalidSegmentLength, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -276,409 +276,409 @@ namespace OscCoreTests
 
                 OscMessage actual = OscMessage.Read(data, 0, data.Length);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.UnknownArguemntType);
+                Assert.Equal(OscError.UnknownArgumentType, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Array_Ints()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Array_Ints();
-//            byte[] bytes = UnitTestHelper.MessageBody_Array_Ints;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Array_Ints2()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Array_Ints2();
-//            byte[] bytes = UnitTestHelper.MessageBody_Array_Ints2;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Array_NestedInts()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Array_NestedInts();
-//            byte[] bytes = UnitTestHelper.MessageBody_Array_NestedInts;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Blob()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Blob();
-//            byte[] bytes = UnitTestHelper.MessageBody_Blob;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Char()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Char();
-//            byte[] bytes = UnitTestHelper.MessageBody_Char;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Color_Blue()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Color_Blue();
-//            byte[] bytes = UnitTestHelper.MessageBody_Color_Blue;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Color_Green()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Color_Green();
-//            byte[] bytes = UnitTestHelper.MessageBody_Color_Green;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Color_Red()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Color_Red();
-//            byte[] bytes = UnitTestHelper.MessageBody_Color_Red;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Color_Transparent()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Color_Transparent();
-//            byte[] bytes = UnitTestHelper.MessageBody_Color_Transparent;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Double()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Double();
-//            byte[] bytes = UnitTestHelper.MessageBody_Double;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_False()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_False();
-//            byte[] bytes = UnitTestHelper.MessageBody_False;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Float()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Float();
-//            byte[] bytes = UnitTestHelper.MessageBody_Float;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Float2()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Float2();
-//            byte[] bytes = UnitTestHelper.MessageBody_Float2;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Float3()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Float3();
-//            byte[] bytes = UnitTestHelper.MessageBody_Float3;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Infinitum()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Infinitum();
-//            byte[] bytes = UnitTestHelper.MessageBody_Infinitum;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Int()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Int();
-//            byte[] bytes = UnitTestHelper.MessageBody_Int;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Long()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Long();
-//            byte[] bytes = UnitTestHelper.MessageBody_Long;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Midi()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Midi();
-//            byte[] bytes = UnitTestHelper.MessageBody_Midi;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Nil()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Nil();
-//            byte[] bytes = UnitTestHelper.MessageBody_Nil;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_String()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_String();
-//            byte[] bytes = UnitTestHelper.MessageBody_String;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_Symbol()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_Symbol();
-//            byte[] bytes = UnitTestHelper.MessageBody_Symbol;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_TimeTag()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_TimeTag();
-//            byte[] bytes = UnitTestHelper.MessageBody_TimeTag;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
-//
-//        /// <summary>
-//        ///A test for Equals
-//        ///</summary>
-//        [Fact]
-//        public void EqualsTest_True()
-//        {
-//            OscMessage expected = UnitTestHelper.Message_True();
-//            byte[] bytes = UnitTestHelper.MessageBody_True;
-//
-//            int count = bytes.Length;
-//            OscMessage actual;
-//
-//            actual = OscMessage.Read(bytes, 0, count);
-//
-//            Assert.True(actual.Equals(expected));
-//        }
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Array_Ints()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Array_Ints();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Array_Ints;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Array_Ints2()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Array_Ints2();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Array_Ints2;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Array_NestedInts()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Array_NestedInts();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Array_NestedInts;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Blob()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Blob();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Blob;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Char()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Char();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Char;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Color_Blue()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Color_Blue();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Color_Blue;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Color_Green()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Color_Green();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Color_Green;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Color_Red()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Color_Red();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Color_Red;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Color_Transparent()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Color_Transparent();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Color_Transparent;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Double()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Double();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Double;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_False()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_False();
+        //            byte[] bytes = UnitTestHelper.MessageBody_False;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Float()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Float();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Float;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Float2()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Float2();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Float2;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Float3()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Float3();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Float3;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Infinitum()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Infinitum();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Infinitum;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Int()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Int();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Int;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Long()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Long();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Long;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Midi()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Midi();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Midi;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Nil()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Nil();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Nil;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_String()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_String();
+        //            byte[] bytes = UnitTestHelper.MessageBody_String;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_Symbol()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_Symbol();
+        //            byte[] bytes = UnitTestHelper.MessageBody_Symbol;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_TimeTag()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_TimeTag();
+        //            byte[] bytes = UnitTestHelper.MessageBody_TimeTag;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
+        //
+        //        /// <summary>
+        //        ///A test for Equals
+        //        ///</summary>
+        //        [Fact]
+        //        public void EqualsTest_True()
+        //        {
+        //            OscMessage expected = UnitTestHelper.Message_True();
+        //            byte[] bytes = UnitTestHelper.MessageBody_True;
+        //
+        //            int count = bytes.Length;
+        //            OscMessage actual;
+        //
+        //            actual = OscMessage.Read(bytes, 0, count);
+        //
+        //            Assert.True(actual.Equals(expected));
+        //        }
 
         /// <summary>
         ///A test for MessageSize
@@ -935,13 +935,13 @@ namespace OscCoreTests
 
             try
             {
-                OscMessage target = new OscMessage(address);
+                OscMessage target = new(address);
 
                 Assert.True(false);
             }
             catch (Exception ex)
             {
-                Assert.IsAssignableFrom(typeof(ArgumentNullException), ex);
+                Assert.IsType<ArgumentNullException>(ex, exactMatch: false);
             }
         }
 
@@ -956,13 +956,13 @@ namespace OscCoreTests
 
             try
             {
-                OscMessage target = new OscMessage(address, new object[] {null});
+                OscMessage target = new(address, [null]);
 
                 Assert.True(false);
             }
             catch (Exception ex)
             {
-                Assert.IsAssignableFrom(typeof(ArgumentException), ex);
+                Assert.IsType<ArgumentException>(ex, exactMatch: false);
             }
         }
 
@@ -973,7 +973,7 @@ namespace OscCoreTests
             Uri ipEndPoint = new Uri($"udp://{IPAddress.Loopback}:{8001}");
 
             string address = "/test";
-            byte[] value = {4, 2};
+            byte[] value = { 4, 2 };
 
             OscMessage target = new OscMessage(ipEndPoint, address, value);
 
@@ -989,7 +989,7 @@ namespace OscCoreTests
             Uri ipEndPoint = new Uri($"udp://{IPAddress.Loopback}:{8001}");
 
             string address = "test";
-            byte[] value = {4, 2};
+            byte[] value = { 4, 2 };
 
             try
             {
@@ -999,7 +999,7 @@ namespace OscCoreTests
             }
             catch (Exception ex)
             {
-                Assert.IsAssignableFrom(typeof(ArgumentException), ex);
+                Assert.IsType<ArgumentException>(ex, exactMatch: false);
             }
         }
 
@@ -1010,7 +1010,7 @@ namespace OscCoreTests
             Uri ipEndPoint = new Uri($"udp://{IPAddress.Loopback}:{8001}");
 
             string address = null;
-            byte[] value = {4, 2};
+            byte[] value = { 4, 2 };
 
             try
             {
@@ -1020,7 +1020,7 @@ namespace OscCoreTests
             }
             catch (Exception ex)
             {
-                Assert.IsAssignableFrom(typeof(ArgumentNullException), ex);
+                Assert.IsType<ArgumentNullException>(ex, exactMatch: false);
             }
         }
 
@@ -1032,7 +1032,7 @@ namespace OscCoreTests
         public void OscMessageConstructorTest_SingleArg_Blob()
         {
             string address = "/test";
-            byte[] value = {4, 2};
+            byte[] value = { 4, 2 };
 
             OscMessage target = new OscMessage(address, value);
 

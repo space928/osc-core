@@ -2,49 +2,69 @@
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
 using System;
+using System.Runtime.InteropServices;
 using OscCore.LowLevel;
 
 namespace OscCore
 {
     /// <summary>
-    ///     Base class for all osc packets
+    /// Discriminated union type for OSC messages and bundles.
     /// </summary>
-    public abstract class OscPacket
+    //[StructLayout(LayoutKind.Explicit)]
+    public readonly struct OscPacket
     {
-        /// <summary>
-        ///     The packet origin
-        /// </summary>
-        public Uri Origin { get; protected set; }
+        /*[FieldOffset(0)]*/ private readonly OscPacketKind kind;
+        /*[FieldOffset(4)]*/ private readonly OscMessage oscMessage;
+        /*[FieldOffset(4)]*/ private readonly OscBundle oscBundle;
 
-        /// <summary>
-        ///     The size of the packet in bytes
-        /// </summary>
-        public abstract int SizeInBytes { get; }
+        public OscPacketKind Kind => kind;
+        public OscMessage OscMessage => kind == OscPacketKind.OscMessage ? oscMessage : throw new FieldAccessException();
+        public OscBundle OscBundle => kind == OscPacketKind.OscBundle ? oscBundle : throw new FieldAccessException();
 
-        internal OscPacket()
+        public int SizeInBytes
         {
+            get
+            {
+                return kind switch
+                {
+                    OscPacketKind.OscMessage => oscMessage.SizeInBytes,
+                    OscPacketKind.OscBundle => oscBundle.SizeInBytes,
+                    _ => throw new NotImplementedException(),
+                };
+            }
         }
 
-        public static OscPacket Parse(string str, IFormatProvider provider = null)
+        public OscPacket(in OscMessage msg)
         {
-            if (string.IsNullOrWhiteSpace(str))
-            {
-                throw new ArgumentNullException(nameof(str));
-            }
+            this.kind = OscPacketKind.OscMessage;
+            this.oscMessage = msg;
+        }
 
-            OscStringReader reader = new OscStringReader(str);
+        public OscPacket(in OscBundle bundle)
+        {
+            this.kind = OscPacketKind.OscBundle;
+            this.oscBundle = bundle;
+        }
+
+        public static implicit operator OscPacket(in OscMessage msg) => new(in msg);
+        public static implicit operator OscPacket(in OscBundle bundle) => new(in bundle);
+
+        public static OscPacket Parse(ReadOnlySpan<char> str, IFormatProvider? provider = null)
+        {
+            if (str.IsWhiteSpace())
+                throw new ArgumentNullException(nameof(str));
+
+            OscStringReader reader = new(str);
 
             return Parse(ref reader, provider, OscSerializationToken.End);
         }
 
-        public static OscPacket Parse(ref OscStringReader reader, IFormatProvider provider = null, OscSerializationToken endToken = OscSerializationToken.End)
+        public static OscPacket Parse(ref OscStringReader reader, IFormatProvider? provider = null, OscSerializationToken endToken = OscSerializationToken.End)
         {
             if (reader.PeekChar() == '#')
-            {
-                return OscBundle.Parse(ref reader, provider, endToken);
-            }
+                return new(OscBundle.Parse(ref reader, provider, endToken));
 
-            return OscMessage.Parse(ref reader, provider, endToken);
+            return new(OscMessage.Parse(ref reader, provider, endToken));
         }
 
         /// <summary>
@@ -56,54 +76,67 @@ namespace OscCore
         /// <param name="origin">the origin that is the origin of this packet</param>
         /// <param name="timeTag">the time tag asociated with the parent</param>
         /// <returns>the packet</returns>
-        public static OscPacket Read(
-            byte[] bytes,
-            int index,
-            int count,
-            Uri origin = null,
-            OscTimeTag? timeTag = null)
+        public static OscPacket Read(byte[] bytes, int index, int count, Uri? origin = null, OscTimeTag? timeTag = null)
         {
-            //if (OscBundle.IsBundle(bytes, index, count) == true)
-            if (bytes[index] == (byte) '#')
-            {
-                return OscBundle.Read(bytes, index, count, origin);
-            }
+            if (bytes[index] == (byte)'#')
+                return new(OscBundle.Read(bytes, index, count, origin));
 
-            return OscMessage.Read(bytes, index, count, origin, timeTag);
+            return new(OscMessage.Read(bytes, index, count, origin, timeTag));
         }
 
-        public static OscPacket Read(
-            OscReader reader,
-            int count,
-            Uri origin = null,
-            OscTimeTag? timeTag = null)
+        public static OscPacket Read(ref OscReader reader, int count, Uri? origin = null, OscTimeTag? timeTag = null)
         {
-            if (reader.PeekByte() == (byte) '#')
-            {
-                return OscBundle.Read(reader, count, origin);
-            }
+            if (reader.PeekByte() == (byte)'#')
+                return new(OscBundle.Read(ref reader, count, origin));
 
-            return OscMessage.Read(reader, count, origin, timeTag);
+            return new(OscMessage.Read(ref reader, count, origin, timeTag));
         }
 
         /// <summary>
         ///     Get an array of bytes containing the entire packet
         /// </summary>
         /// <returns></returns>
-        public abstract byte[] ToByteArray();
+        public byte[] ToByteArray()
+        {
+            return kind switch
+            {
+                OscPacketKind.OscMessage => oscMessage.ToByteArray(),
+                OscPacketKind.OscBundle => oscBundle.ToByteArray(),
+                _ => throw new NotImplementedException(),
+            };
+        }
 
+        public void Write(ref OscWriter writer)
+        {
+            switch (kind)
+            {
+                case OscPacketKind.OscMessage: oscMessage.Write(ref writer); break;
+                case OscPacketKind.OscBundle: oscBundle.Write(ref writer); break;
+                default: throw new NotImplementedException();
+            };
+        }
+
+        public void WriteToString(OscStringWriter writer)
+        {
+            switch (kind)
+            {
+                case OscPacketKind.OscMessage: oscMessage.WriteToString(writer); break;
+                case OscPacketKind.OscBundle: oscBundle.WriteToString(writer); break;
+                default: throw new NotImplementedException();
+            };
+        }
+
+        // TODO: Either invert the parse logic to avoid having to try catch the whole read, or remove this API method.
         public static bool TryParse(string str, out OscPacket packet)
         {
             try
             {
                 packet = Parse(str);
-
                 return true;
             }
             catch
             {
-                packet = default(OscPacket);
-
+                packet = default;
                 return false;
             }
         }
@@ -113,27 +146,20 @@ namespace OscCore
             try
             {
                 packet = Parse(str, provider);
-
                 return true;
             }
             catch
             {
-                packet = default(OscPacket);
-
+                packet = default;
                 return false;
             }
         }
 
-        /// <summary>
-        ///     Send the packet into a byte array
-        /// </summary>
-        /// <param name="data">the destination for the packet</param>
-        /// <param name="index">the offset within the array where writing should begin</param>
-        /// <returns>the length of the packet in bytes</returns>
-        public abstract int Write(byte[] data, int index);
+    }
 
-        public abstract void Write(OscWriter writer);
-
-        public abstract void WriteToString(OscStringWriter writer);
+    public enum OscPacketKind : int
+    {
+        OscMessage,
+        OscBundle,
     }
 }

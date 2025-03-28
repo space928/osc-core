@@ -1,8 +1,30 @@
-<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <VersionBase>1.0.5</VersionBase>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Version>$(VersionBase)$(VersionSuffix)</Version>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<LangVersion>12</LangVersion>
+		<Nullable>enable</Nullable>
+		<PackageId>$(AssemblyName)</PackageId>
+		<PackageOutputPath>../../.package-store</PackageOutputPath>
+		<Company>Tilde Love Project</Company>
+		<PackageProjectUrl>http://tilde.love</PackageProjectUrl>
+		<Authors>Phill Tew; Thomas Mathieson</Authors>
+		<Copyright>Copyright (c) Tilde Love Project and Thomas Mathieson. All rights reserved.</Copyright>
+		<PackageIconUrl>https://s.gravatar.com/avatar/d56be08732b3f23cc1b11662034d8b1e?s=64</PackageIconUrl>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Title>Osc Core</Title>
+		<Description>A preformant Open Sound Control library for .NET Standard from the creator of Rug.Osc</Description>
+		<RepositoryUrl>https://github.com/space928/osc-core.git</RepositoryUrl>
+		<PackageTags>tilde; OSC; Open Sound Control;</PackageTags>
+	</PropertyGroup>
+	
+	<PropertyGroup>
+        <VersionBase>1.1.0</VersionBase>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <!--<GeneratePackageOnBuild>true</GeneratePackageOnBuild>-->
+		<NoWarn>$(NoWarn);CS1591</NoWarn>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug' ">
@@ -14,24 +36,11 @@
         <IncludeSymbols>false</IncludeSymbols>
         <VersionSuffix />
     </PropertyGroup>
-
-    <PropertyGroup>
-        <Version>$(VersionBase)$(VersionSuffix)</Version>
-        <TargetFramework>netstandard1.3</TargetFramework>
-        <PackageId>$(AssemblyName)</PackageId>
-        <PackageOutputPath>../../.package-store</PackageOutputPath>
-        <Company>Tilde Love Project</Company>
-        <PackageProjectUrl>http://tilde.love</PackageProjectUrl>
-        <Authors>Phill Tew</Authors>
-        <Copyright>Copyright (c) Tilde Love Project. All rights reserved.</Copyright>
-        <PackageIconUrl>https://s.gravatar.com/avatar/d56be08732b3f23cc1b11662034d8b1e?s=64</PackageIconUrl>
-    </PropertyGroup>
     
-    <PropertyGroup>
-        <Title>Osc Core</Title>
-        <Description>A preformant Open Sound Control library for .NET Standard from the creator of Rug.Osc</Description>
-        <RepositoryUrl>https://github.com/tilde-love/osc-core</RepositoryUrl>
-        <PackageTags>tilde; OSC; Open Sound Control;</PackageTags>
-    </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="System.Memory" Version="4.6.2" />
+      <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.1" />
+      <PackageReference Include="System.Runtime.Extensions" Version="4.3.1" />
+    </ItemGroup>
     
 </Project>

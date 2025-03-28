@@ -101,7 +101,7 @@ namespace OscCore
         /// <summary>
         ///     The type of an argument is unsupported
         /// </summary>
-        UnknownArguemntType,
+        UnknownArgumentType,
 
         /// <summary>
         ///     Bundle with missing ident

@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace OscCore
     /// <summary>
     ///     Bundle of osc messages
     /// </summary>
-    public sealed class OscBundle : OscPacket, IEnumerable<OscPacket>, IEnumerable<OscMessage>
+    public struct OscBundle : IEnumerable<OscPacket>, IEnumerable<OscMessage>
     {
         public const string BundleIdent = "#bundle";
 
@@ -28,17 +29,22 @@ namespace OscCore
         /// </summary>
         /// <param name="index">the index of the message</param>
         /// <returns>message at the supplied index</returns>
-        public OscPacket this[int index] => packets[index];
+        public readonly OscPacket this[int index] => packets[index];
 
         /// <summary>
         ///     The number of messages in the bundle
         /// </summary>
-        public int Count => packets.Length;
+        public readonly int Count => packets.Length;
+
+        /// <summary>
+        ///     The packet origin
+        /// </summary>
+        public Uri? Origin { get; private set; }
 
         /// <summary>
         ///     The size of the packet in bytes
         /// </summary>
-        public override int SizeInBytes => BundleHeaderSizeInBytes + (this as IEnumerable<OscPacket>).Sum(message => 4 + message.SizeInBytes);
+        public readonly int SizeInBytes => BundleHeaderSizeInBytes + (this as IEnumerable<OscPacket>).Sum(message => 4 + message.SizeInBytes);
 
         /// <summary>
         ///     Osc timestamp associated with this bundle
@@ -99,29 +105,16 @@ namespace OscCore
             packets = messages;
         }
 
-        private OscBundle()
-        {
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return (packets as IEnumerable).GetEnumerator();
-        }
+        readonly IEnumerator IEnumerable.GetEnumerator() => packets.GetEnumerator();
 
         /// <inheritdoc />
-        IEnumerator<OscMessage> IEnumerable<OscMessage>.GetEnumerator()
-        {
-            return Messages();
-        }
+        readonly IEnumerator<OscMessage> IEnumerable<OscMessage>.GetEnumerator() => Messages();
 
         /// <summary>
         ///     Enumerate all the osc packets contained in this bundle
         /// </summary>
         /// <returns>A IEnumerator of osc packets</returns>
-        public IEnumerator<OscPacket> GetEnumerator()
-        {
-            return (packets as IEnumerable<OscPacket>).GetEnumerator();
-        }
+        public readonly IEnumerator<OscPacket> GetEnumerator() => (packets as IEnumerable<OscPacket>).GetEnumerator();
 
         /// <summary>
         ///     Does the array contain a bundle packet?
@@ -142,24 +135,21 @@ namespace OscCore
             return BundleIdent.Equals(ident, StringComparison.Ordinal);
         }
 
-        public IEnumerator<OscMessage> Messages()
+        public readonly IEnumerator<OscMessage> Messages()
         {
             foreach (OscPacket packet in packets)
             {
-                switch (packet)
+                switch (packet.Kind)
                 {
-                    case OscMessage message:
-                        yield return message;
+                    case OscPacketKind.OscMessage:
+                        yield return packet.OscMessage;
                         break;
-                    case OscBundle oscBundle:
-                        using (IEnumerator<OscMessage> messages = oscBundle.Messages())
+                    case OscPacketKind.OscBundle:
+                        using (IEnumerator<OscMessage> messages = packet.OscBundle.Messages())
                         {
                             while (messages.MoveNext())
-                            {
                                 yield return messages.Current;
-                            }
                         }
-
                         break;
                     default:
                         throw new Exception();
@@ -173,79 +163,57 @@ namespace OscCore
         /// <param name="str">a string containing a bundle</param>
         /// <param name="provider">the format provider to use</param>
         /// <returns>the parsed bundle</returns>
-        public new static OscBundle Parse(string str, IFormatProvider provider = null)
+        public static OscBundle Parse(ReadOnlySpan<char> str, IFormatProvider? provider = null)
         {
-            if (provider == null)
-            {
-                provider = CultureInfo.InvariantCulture;
-            }
+            provider ??= CultureInfo.InvariantCulture;
 
-            if (string.IsNullOrWhiteSpace(str))
-            {
+            if (str.IsWhiteSpace())
                 throw new ArgumentNullException(nameof(str));
-            }
 
-            OscStringReader reader = new OscStringReader(str);
+            OscStringReader reader = new(str);
 
             return Parse(ref reader, provider, OscSerializationToken.End);
         }
 
-        public new static OscBundle Parse(ref OscStringReader reader, IFormatProvider provider = null, OscSerializationToken endToken = OscSerializationToken.End)
+        public static OscBundle Parse(ref OscStringReader reader, IFormatProvider? provider = null, OscSerializationToken endToken = OscSerializationToken.End)
         {
-            if (provider == null)
-            {
-                provider = CultureInfo.InvariantCulture;
-            }
+            provider ??= CultureInfo.InvariantCulture;
 
-            string ident = reader.ReadAddress(false)
-                .Trim();
+            // TODO: Pointless alloc
+            string ident = reader.ReadAddress(false).Trim();
 
             if (BundleIdent.Equals(ident, StringComparison.Ordinal) == false)
-            {
                 throw new Exception($"Invalid bundle ident '{ident}'");
-            }
 
             reader.ReadSeparator();
 
-            if (reader.ReadNextToken(out string timeStampStr) != OscSerializationToken.Literal)
-            {
+            if (reader.ReadNextToken(out var timeStampStr) != OscSerializationToken.Literal)
                 throw new Exception("Invalid bundle timestamp");
-            }
 
             OscTimeTag timeStamp = OscTimeTag.Parse(timeStampStr.Trim(), provider);
 
             if (reader.ReadSeparatorOrEnd() == endToken)
-            {
                 return new OscBundle(timeStamp);
-            }
 
-            List<OscPacket> packets = new List<OscPacket>();
+            List<OscPacket> packets = [];
 
-            OscSerializationToken token = OscSerializationToken.None;
-
-            token = reader.ReadNextToken(out string _);
+            OscSerializationToken token = reader.ReadNextToken(out _);
 
             while (token != endToken && token != OscSerializationToken.End)
             {
                 if (token != OscSerializationToken.ObjectStart)
-                {
                     throw new Exception("Invalid bundle token");
-                }
 
                 packets.Add(OscPacket.Parse(ref reader, provider, OscSerializationToken.ObjectEnd));
 
-                token = reader.ReadNextToken(out string _);
+                token = reader.ReadNextToken(out _);
 
                 if (token == OscSerializationToken.Separator)
-                {
-                    token = reader.ReadNextToken(out string _);
-                }
+                    token = reader.ReadNextToken(out _);
             }
 
             if (token != endToken)
-            {
                 throw new OscException(OscError.UnexpectedToken, $"Unexpected token {token}");
-            }
 
             return new OscBundle(timeStamp, packets.ToArray());
         }
@@ -258,22 +226,18 @@ namespace OscCore
         /// <param name="count">the number of bytes in the bundle</param>
         /// <param name="origin">the origin that is the origin of this bundle</param>
         /// <returns>the bundle</returns>
-        public static OscBundle Read(
-            byte[] bytes,
-            int index,
-            int count,
-            Uri origin = null)
+        public static OscBundle Read(byte[] bytes, int index, int count, Uri? origin = null)
         {
-            ArraySegment<byte> arraySegment = new ArraySegment<byte>(bytes, index, count);
+            ArraySegment<byte> arraySegment = new(bytes, index, count);
 
-            OscReader reader = new OscReader(arraySegment);
+            OscReader reader = new(arraySegment);
 
-            return Read(reader, count, origin);
+            return Read(ref reader, count, origin);
         }
 
-        public static OscBundle Read(OscReader reader, int count, Uri origin = null)
+        public static OscBundle Read(ref OscReader reader, int count, Uri? origin = null)
         {
-            OscBundle bundle = new OscBundle
+            OscBundle bundle = new()
             {
                 Origin = origin
             };
@@ -293,7 +257,7 @@ namespace OscCore
 
             bundle.Timestamp = reader.ReadBundleTimeTag();
 
-            List<OscPacket> messages = new List<OscPacket>();
+            List<OscPacket> messages = [];
 
             while (reader.Position < bundleEnd)
             {
@@ -313,7 +277,7 @@ namespace OscCore
                     throw new OscException(OscError.InvalidBundleMessageLength, "Invalid bundle message length");
                 }
 
-                messages.Add(Read(reader, messageLength, origin, bundle.Timestamp));
+                messages.Add(OscPacket.Read(ref reader, messageLength, origin, bundle.Timestamp));
             }
 
             bundle.packets = messages.ToArray();
@@ -321,16 +285,13 @@ namespace OscCore
             return bundle;
         }
 
-        public OscPacket[] ToArray()
-        {
-            return packets;
-        }
+        public readonly OscPacket[] ToArray() => packets;
 
         /// <summary>
         ///     Creates a byte array that contains the osc message
         /// </summary>
         /// <returns></returns>
-        public override byte[] ToByteArray()
+        public readonly byte[] ToByteArray()
         {
             byte[] data = new byte[SizeInBytes];
 
@@ -339,9 +300,9 @@ namespace OscCore
             return data;
         }
 
-        public override string ToString()
+        public readonly override string ToString()
         {
-            OscStringWriter writer = new OscStringWriter();
+            OscStringWriter writer = new();
 
             WriteToString(writer);
 
@@ -364,7 +325,7 @@ namespace OscCore
             }
             catch
             {
-                bundle = null;
+                bundle = default;
 
                 return false;
             }
@@ -387,7 +348,7 @@ namespace OscCore
             }
             catch
             {
-                bundle = null;
+                bundle = default;
 
                 return false;
             }
@@ -399,21 +360,14 @@ namespace OscCore
         /// <param name="data">an array ouf bytes to write the bundle into</param>
         /// <param name="index">the index within the array where writing should begin</param>
         /// <returns>the number of bytes in the message</returns>
-        public override int Write(byte[] data, int index)
+        public readonly int Write(byte[] data, int index)
         {
-            using (MemoryStream stream = new MemoryStream(data))
-            {
-                OscWriter writer = new OscWriter(stream);
-
-                stream.Position = index;
-
-                Write(writer);
-
-                return (int) stream.Position - index;
-            }
+            OscWriter writer = new(new(data, index, data.Length - index));
+            Write(ref writer);
+            return writer.Position;
         }
 
-        public override void Write(OscWriter writer)
+        public readonly void Write(ref OscWriter writer)
         {
             OscTimeTag timestamp = Timestamp;
 
@@ -423,11 +377,11 @@ namespace OscCore
             {
                 writer.WriteBundleMessageLength(message.SizeInBytes);
 
-                message.Write(writer);
+                message.Write(ref writer);
             }
         }
 
-        public override void WriteToString(OscStringWriter writer)
+        public readonly void WriteToString(OscStringWriter writer)
         {
             writer.WriteBundleIdent(Timestamp);
 

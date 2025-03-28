@@ -14,7 +14,7 @@ namespace OscCore
     /// <summary>
     ///     Any osc message
     /// </summary>
-    public sealed class OscMessage : OscPacket, IEnumerable<object>, IOscMessage
+    public struct OscMessage : IEnumerable<object>, IOscMessage
     {
         private object[] arguments;
 
@@ -23,27 +23,25 @@ namespace OscCore
         /// </summary>
         /// <param name="index">the index of the message</param>
         /// <returns>message at the supplied index</returns>
-        public object this[int index] => arguments[index];
+        public readonly object this[int index] => arguments[index];
 
         /// <summary>
-        ///     IS the argument list empty
+        ///     Is the argument list empty
         /// </summary>
-        public bool IsEmpty => arguments.Length == 0;
+        public readonly bool IsEmpty => arguments.Length == 0;
 
         /// <summary>
         ///     The size of the message in bytes
         /// </summary>
-        public override int SizeInBytes
+        public readonly int SizeInBytes
         {
             get
             {
                 int size = 0;
 
                 // should never happen 
-                if (Address == string.Empty)
-                {
+                if (string.IsNullOrEmpty(Address))
                     return size;
-                }
 
                 // address + terminator 
                 size += Address.Length + 1;
@@ -52,15 +50,11 @@ namespace OscCore
                 int nullCount = 4 - size % 4;
 
                 if (nullCount < 4)
-                {
                     size += nullCount;
-                }
 
                 if (arguments.Length == 0)
-                {
                     // return the size plus the comma and padding
                     return size + 4;
-                }
 
                 // comma 
                 size++;
@@ -74,15 +68,32 @@ namespace OscCore
                 nullCount = 4 - size % 4;
 
                 if (nullCount < 4)
-                {
                     size += nullCount;
-                }
 
                 size += OscUtils.SizeOfObjectArray(arguments);
 
                 return size;
             }
         }
+
+        /// <summary>
+        ///     The address of the message
+        /// </summary>
+        public string? Address { get; private set; }
+
+        /// <summary>
+        ///     Number of arguments in the message
+        /// </summary>
+        public readonly int Count => arguments.Length;
+
+        /// <summary>
+        ///     Optional time tag, will be non-null if this message was extracted from a bundle
+        /// </summary>
+        public OscTimeTag? Timestamp { get; set; }
+
+        public Uri? Origin { get; private set; }
+
+        //public readonly object[] ArgsArray => arguments;
 
         /// <summary>
         ///     Construct a osc message
@@ -93,27 +104,23 @@ namespace OscCore
         ///     each argument type
         /// </param>
         /// <example>OscMessage message = new OscMessage("/test/test", 1, 2, 3);</example>
-        public OscMessage(string address, params object[] args)
+        public OscMessage(string? address, params object[] args)
         {
             Origin = null;
 
             Address = address;
             arguments = args;
 
-            if (string.IsNullOrWhiteSpace(Address))
-            {
-                throw new ArgumentNullException(nameof(address));
-            }
+            Timestamp = null;
 
-            if (OscAddress.IsValidAddressPattern(address) == false)
-            {
+            if (string.IsNullOrWhiteSpace(address))
+                throw new ArgumentNullException(nameof(address));
+
+            if (OscAddress.IsValidAddressPattern(address!) == false)
                 throw new ArgumentException($"The address '{address}' is not a valid osc address", nameof(address));
-            }
 
             if (args == null)
-            {
                 throw new ArgumentNullException(nameof(args));
-            }
 
             CheckArguments(arguments);
         }
@@ -133,60 +140,30 @@ namespace OscCore
             Origin = origin;
             Address = address;
             arguments = args;
+            Timestamp = null;
 
             if (string.IsNullOrWhiteSpace(Address))
-            {
                 throw new ArgumentNullException(nameof(address));
-            }
 
             if (OscAddress.IsValidAddressPattern(address) == false)
-            {
                 throw new ArgumentException($"The address '{address}' is not a valid osc address", nameof(address));
-            }
 
             if (args == null)
-            {
                 throw new ArgumentNullException(nameof(args));
-            }
 
             CheckArguments(arguments);
         }
 
-        private OscMessage()
-        {
-        }
+        readonly IEnumerator IEnumerable.GetEnumerator() => arguments.GetEnumerator();
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return arguments.GetEnumerator();
-        }
-
-        public IEnumerator<object> GetEnumerator()
-        {
-            return (arguments as IEnumerable<object>).GetEnumerator();
-        }
-
-        /// <summary>
-        ///     The address of the message
-        /// </summary>
-        public string Address { get; private set; }
-
-        /// <summary>
-        ///     Number of arguments in the message
-        /// </summary>
-        public int Count => arguments.Length;
-
-        /// <summary>
-        ///     Optional time tag, will be non-null if this message was extracted from a bundle
-        /// </summary>
-        public OscTimeTag? Timestamp { get; set; }
+        public readonly IEnumerator<object> GetEnumerator() => (arguments as IEnumerable<object>).GetEnumerator();
 
         public OscMessage Clone()
         {
-            string address = Address;
-            object[] args = arguments.Clone() as object[];
+            string? address = Address;
+            object[]? args = arguments.Clone() as object[];
 
-            OscMessage message = new OscMessage(address, args)
+            OscMessage message = new(address!, args!)
             {
                 Origin = Origin,
                 Timestamp = Timestamp
@@ -201,31 +178,28 @@ namespace OscCore
         /// <param name="str">a string containing a message</param>
         /// <param name="provider">the format provider to use</param>
         /// <returns>the parsed message</returns>
-        public new static OscMessage Parse(string str, IFormatProvider provider = null)
+        public static OscMessage Parse(ReadOnlySpan<char> str, IFormatProvider? provider = null)
         {
-            if (string.IsNullOrWhiteSpace(str))
-            {
-                throw new ArgumentNullException("str");
-            }
+            if (str.IsWhiteSpace())
+                throw new ArgumentNullException(nameof(str));
 
-            if (provider == null)
-            {
-                provider = CultureInfo.InvariantCulture;
-            }
+            provider ??= CultureInfo.InvariantCulture;
 
-            OscStringReader reader = new OscStringReader(str);
+            OscStringReader reader = new(str);
 
             return Parse(ref reader, provider, OscSerializationToken.End);
         }
 
-        public new static OscMessage Parse(ref OscStringReader reader, IFormatProvider provider = null, OscSerializationToken endToken = OscSerializationToken.End)
+        public static OscMessage Parse(ref OscStringReader reader, IFormatProvider? provider = null, OscSerializationToken endToken = OscSerializationToken.End)
         {
             string address = reader.ReadAddress(true);
 
-            // parse arguments
-            List<object> arguments = new List<object>(reader.ReadArguments(provider, endToken));
+            provider ??= CultureInfo.InvariantCulture;
 
-            return new OscMessage(address, arguments.ToArray());
+            // parse arguments
+            object[] arguments = reader.ReadArguments(provider, endToken);
+
+            return new OscMessage(address, arguments);
         }
 
         /// <summary>
@@ -238,46 +212,36 @@ namespace OscCore
         /// <param name="timeTag">time-tag of parent bundle</param>
         /// <exception cref="OscException"></exception>
         /// <returns>the parsed OSC message or an empty message if their was an error while parsing</returns>
-        public new static OscMessage Read(
-            byte[] bytes,
-            int index,
-            int count,
-            Uri origin = null,
-            OscTimeTag? timeTag = null)
+        public static OscMessage Read(byte[] bytes, int index, int count, Uri? origin = null, OscTimeTag? timeTag = null)
         {
-            ArraySegment<byte> arraySegment = new ArraySegment<byte>(bytes, index, count);
+            ArraySegment<byte> arraySegment = new(bytes, index, count);
 
-            OscReader reader = new OscReader(arraySegment);
+            OscReader reader = new(arraySegment);
 
-            return Read(reader, count, origin, timeTag);
+            return Read(ref reader, count, origin, timeTag);
         }
 
-        public new static OscMessage Read(
-            OscReader reader,
-            int count,
-            Uri origin = null,
-            OscTimeTag? timeTag = null)
+        public static OscMessage Read(ref OscReader reader, int count, Uri? origin = null, OscTimeTag? timeTag = null)
         {
             reader.BeginMessage(count);
 
-            OscMessage msg = new OscMessage
+            OscMessage msg = new()
             {
                 Origin = origin,
-                Timestamp = timeTag
+                Timestamp = timeTag,
+                Address = reader.ReadAddress()
             };
-
-            msg.Address = reader.ReadAddress();
 
             if (reader.PeekToken() == OscToken.End)
             {
-                msg.arguments = new object[0];
+                msg.arguments = [];
 
                 return msg;
             }
 
             OscTypeTag typeTag = reader.ReadTypeTag();
 
-            msg.arguments = new object[reader.GetArgumentCount(ref typeTag, out OscToken argumentsType)];
+            msg.arguments = new object[reader.GetArgumentCount(ref typeTag, out _)];
 
             ReadArguments(ref reader, ref typeTag, msg.arguments);
 
@@ -288,16 +252,13 @@ namespace OscCore
         ///     Get the arguments as an array
         /// </summary>
         /// <returns>arguments array</returns>
-        public object[] ToArray()
-        {
-            return arguments;
-        }
+        public readonly object[] ToArray() => arguments;
 
         /// <summary>
         ///     Creates a byte array that contains the osc message
         /// </summary>
         /// <returns></returns>
-        public override byte[] ToByteArray()
+        public readonly byte[] ToByteArray()
         {
             byte[] data = new byte[SizeInBytes];
 
@@ -306,9 +267,9 @@ namespace OscCore
             return data;
         }
 
-        public override string ToString()
+        public readonly override string ToString()
         {
-            OscStringWriter writer = new OscStringWriter();
+            OscStringWriter writer = new();
 
             WriteToString(writer);
 
@@ -331,7 +292,7 @@ namespace OscCore
             }
             catch
             {
-                message = null;
+                message = default;
 
                 return false;
             }
@@ -354,7 +315,7 @@ namespace OscCore
             }
             catch
             {
-                message = null;
+                message = default;
 
                 return false;
             }
@@ -366,21 +327,14 @@ namespace OscCore
         /// <param name="data">an array of bytes to write the message body into</param>
         /// <param name="index">the index within the array where writing should begin</param>
         /// <returns>the number of bytes in the message</returns>
-        public override int Write(byte[] data, int index)
+        public readonly int Write(byte[] data, int index)
         {
-            using (MemoryStream stream = new MemoryStream(data))
-            {
-                OscWriter writer = new OscWriter(stream);
-
-                stream.Position = index;
-
-                Write(writer);
-
-                return (int) stream.Position - index;
-            }
+            OscWriter writer = new(new(data, index, data.Length - index));
+            Write(ref writer);
+            return writer.Position;
         }
 
-        public override void Write(OscWriter writer)
+        public readonly void Write(ref OscWriter writer)
         {
             writer.StartMessage();
 
@@ -400,21 +354,19 @@ namespace OscCore
             WriteArguments(ref writer, arguments);
         }
 
-        public override void WriteToString(OscStringWriter writer)
+        public readonly void WriteToString(OscStringWriter writer)
         {
             writer.WriteAddress(Address);
 
             if (IsEmpty)
-            {
                 return;
-            }
 
             writer.WriteToken(OscSerializationToken.Separator);
 
             writer.Write(arguments);
         }
 
-        private void CheckArguments(object[] args)
+        private readonly void CheckArguments(object[] args)
         {
             foreach (object obj in args)
             {
@@ -423,32 +375,32 @@ namespace OscCore
                     throw new ArgumentNullException(nameof(args));
                 }
 
-                if (obj is object[])
+                if (obj is object[] argsArray)
                 {
-                    CheckArguments(obj as object[]);
+                    CheckArguments(argsArray);
                 }
                 else if (
-                    !(obj is int) &&
-                    !(obj is long) &&
-                    !(obj is float) &&
-                    !(obj is double) &&
-                    !(obj is string) &&
-                    !(obj is bool) &&
-                    !(obj is OscNull) &&
-                    !(obj is OscColor) &&
-                    !(obj is OscSymbol) &&
-                    !(obj is OscTimeTag) &&
-                    !(obj is OscMidiMessage) &&
-                    !(obj is OscImpulse) &&
-                    !(obj is byte) &&
-                    !(obj is byte[]))
+                    obj is not int &&
+                    obj is not long &&
+                    obj is not float &&
+                    obj is not double &&
+                    obj is not string &&
+                    obj is not bool &&
+                    obj is not OscNull &&
+                    obj is not OscColor &&
+                    obj is not OscSymbol &&
+                    obj is not OscTimeTag &&
+                    obj is not OscMidiMessage &&
+                    obj is not OscImpulse &&
+                    obj is not byte &&
+                    obj is not byte[])
                 {
                     throw new ArgumentException("Argument is of an invalid type.", nameof(args));
                 }
             }
         }
 
-        private static void ReadArguments(ref OscReader reader, ref OscTypeTag typeTag, object[] arguments)
+        private static void ReadArguments(ref OscReader reader, ref OscTypeTag typeTag, object?[] arguments)
         {
             int index = 0;
 
@@ -459,7 +411,7 @@ namespace OscCore
                 switch (next)
                 {
                     case OscToken.ArrayStart:
-                        int arrayLength = reader.StartArray(ref typeTag, out OscToken arrayType);
+                        int arrayLength = reader.StartArray(ref typeTag, out _);
 
                         object[] array = new object[arrayLength];
 
@@ -525,7 +477,7 @@ namespace OscCore
                         writer.WriteBlob(value);
                         break;
                     default:
-                        throw new Exception($"Unsupported arguemnt type '{obj.GetType()}'");
+                        throw new Exception($"Unsupported argument type '{obj.GetType()}'");
                 }
             }
         }
@@ -541,50 +493,50 @@ namespace OscCore
                         WriteTypeTag(ref writer, value);
                         writer.WriteTypeTag(OscToken.ArrayEnd);
                         break;
-                    case int _:
+                    case int:
                         writer.WriteTypeTag(OscToken.Int);
                         break;
-                    case long _:
+                    case long:
                         writer.WriteTypeTag(OscToken.Long);
                         break;
-                    case float _:
+                    case float:
                         writer.WriteTypeTag(OscToken.Float);
                         break;
-                    case double _:
+                    case double:
                         writer.WriteTypeTag(OscToken.Double);
                         break;
-                    case byte _:
+                    case byte:
                         writer.WriteTypeTag(OscToken.Char);
                         break;
-                    case OscColor _:
+                    case OscColor:
                         writer.WriteTypeTag(OscToken.Color);
                         break;
-                    case OscTimeTag _:
+                    case OscTimeTag:
                         writer.WriteTypeTag(OscToken.TimeTag);
                         break;
-                    case OscMidiMessage _:
+                    case OscMidiMessage:
                         writer.WriteTypeTag(OscToken.Midi);
                         break;
                     case bool value:
                         writer.WriteTypeTag(value ? OscToken.True : OscToken.False);
                         break;
-                    case OscNull _:
+                    case OscNull:
                         writer.WriteTypeTag(OscToken.Null);
                         break;
-                    case OscImpulse _:
+                    case OscImpulse:
                         writer.WriteTypeTag(OscToken.Impulse);
                         break;
-                    case string _:
+                    case string:
                         writer.WriteTypeTag(OscToken.String);
                         break;
-                    case OscSymbol _:
+                    case OscSymbol:
                         writer.WriteTypeTag(OscToken.Symbol);
                         break;
-                    case byte[] _:
+                    case byte[]:
                         writer.WriteTypeTag(OscToken.Blob);
                         break;
                     default:
-                        throw new Exception($"Unsupported arguemnt type '{obj.GetType()}'");
+                        throw new Exception($"Unsupported argument type '{obj.GetType()}'");
                 }
             }
         }

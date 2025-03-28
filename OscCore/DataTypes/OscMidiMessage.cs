@@ -10,26 +10,26 @@ using OscCore.LowLevel;
 
 namespace OscCore
 {
-/* 
-	Note Off 	 0x8# 	 note number 	 velocity 
-	Note On 	 0x9# 	 note number 	 velocity 
-	Poly Pressure 	 0xa# 	 note number 	 value 
-	Control Change 	 0xb# 	 controller number 	 value 
-	Program Change 	 0xc# 	 program number 	
-	Channel Pressure 	 0xd# 	 value 	
-	Pitch Bend 	 0xe# 	 0 	 bend amount 
-	System Exclusive 	 0xf0 	 (sysex message) 	 0xf7 
-	Time Code 	 0xf1 	 data 	
-	Song Position 	 0xf2 	 0 	 position 
-	Song Select 	 0xf3 	 song number 	
-	Tune Request 	 0xf6 		
-	Clock Tick 	 0xf8 		
-	Start 	 0xfa 		
-	Continue 	 0xfb 		
-	Stop 	 0xfc 		
-	Active Sense 	 0xfe 		
-	System Reset 	 0xff
-	*/
+    /* 
+        Note Off 	 0x8# 	 note number 	 velocity 
+        Note On 	 0x9# 	 note number 	 velocity 
+        Poly Pressure 	 0xa# 	 note number 	 value 
+        Control Change 	 0xb# 	 controller number 	 value 
+        Program Change 	 0xc# 	 program number 	
+        Channel Pressure 	 0xd# 	 value 	
+        Pitch Bend 	 0xe# 	 0 	 bend amount 
+        System Exclusive 	 0xf0 	 (sysex message) 	 0xf7 
+        Time Code 	 0xf1 	 data 	
+        Song Position 	 0xf2 	 0 	 position 
+        Song Select 	 0xf3 	 song number 	
+        Tune Request 	 0xf6 		
+        Clock Tick 	 0xf8 		
+        Start 	 0xfa 		
+        Continue 	 0xfb 		
+        Stop 	 0xfc 		
+        Active Sense 	 0xfe 		
+        System Reset 	 0xff
+        */
 
     public enum OscMidiMessageType : byte
     {
@@ -228,22 +228,22 @@ namespace OscCore
         /// <summary>
         ///     The midi message type
         /// </summary>
-        public OscMidiMessageType MessageType => (OscMidiMessageType) (StatusByte & 0xF0);
+        public readonly OscMidiMessageType MessageType => (OscMidiMessageType)(StatusByte & 0xF0);
 
         /// <summary>
         ///     The system message type, only valid when MessageType is SystemExclusive
         /// </summary>
-        public OscMidiSystemMessageType SystemMessageType => (OscMidiSystemMessageType) (StatusByte & 0x0F);
+        public readonly OscMidiSystemMessageType SystemMessageType => (OscMidiSystemMessageType)(StatusByte & 0x0F);
 
         /// <summary>
         ///     The channel, only valid when MessageType is not SystemExclusive
         /// </summary>
-        public int Channel => StatusByte & 0x0F;
+        public readonly int Channel => StatusByte & 0x0F;
 
         /// <summary>
         ///     14 bit data value, for pitch bend messages
         /// </summary>
-        public ushort Data14BitValue => (ushort) ((Data1 & 0x7F) | ((Data2 & 0x7F) << 7));
+        public readonly ushort Data14BitValue => (ushort)((Data1 & 0x7F) | ((Data2 & 0x7F) << 7));
 
         #endregion
 
@@ -282,8 +282,8 @@ namespace OscCore
 
             PortID = portID;
             StatusByte = statusByte;
-            Data1 = (byte) (data1 & 0x7F);
-            Data2 = (byte) (data2 & 0x7F);
+            Data1 = (byte)(data1 & 0x7F);
+            Data2 = (byte)(data2 & 0x7F);
         }
 
         /// <summary>
@@ -310,9 +310,9 @@ namespace OscCore
             Note = OscMidiNote.C0;
 
             PortID = portID;
-            StatusByte = (byte) ((int) type | channel);
-            Data1 = (byte) (data1 & 0x7F);
-            Data2 = (byte) (data2 & 0x7F);
+            StatusByte = (byte)((int)type | channel);
+            Data1 = (byte)(data1 & 0x7F);
+            Data2 = (byte)(data2 & 0x7F);
         }
 
         /// <summary>
@@ -343,7 +343,7 @@ namespace OscCore
             OscMidiMessageType type,
             byte channel,
             ushort value)
-            : this(portID, type, channel, (byte) (value & 0x7F), (byte) ((value & 0x3F80) >> 7))
+            : this(portID, type, channel, (byte)(value & 0x7F), (byte)((value & 0x3F80) >> 7))
         {
         }
 
@@ -354,7 +354,7 @@ namespace OscCore
         /// <param name="type">midi system message type</param>
         /// <param name="value">14 bit data value</param>
         public OscMidiMessage(byte portID, OscMidiSystemMessageType type, ushort value)
-            : this(portID, OscMidiMessageType.SystemExclusive, (byte) type, (byte) (value & 0x7F), (byte) ((value & 0x3F80) >> 7))
+            : this(portID, OscMidiMessageType.SystemExclusive, (byte)type, (byte)(value & 0x7F), (byte)((value & 0x3F80) >> 7))
         {
         }
 
@@ -365,7 +365,7 @@ namespace OscCore
         /// <param name="type">midi system message type</param>
         /// <param name="data1">data 1</param>
         public OscMidiMessage(byte portID, OscMidiSystemMessageType type, byte data1)
-            : this(portID, OscMidiMessageType.SystemExclusive, (byte) type, data1, 0)
+            : this(portID, OscMidiMessageType.SystemExclusive, (byte)type, data1, 0)
         {
         }
 
@@ -381,7 +381,7 @@ namespace OscCore
             OscMidiSystemMessageType type,
             byte data1,
             byte data2)
-            : this(portID, OscMidiMessageType.SystemExclusive, (byte) type, data1, data2)
+            : this(portID, OscMidiMessageType.SystemExclusive, (byte)type, data1, data2)
         {
         }
 
@@ -389,22 +389,17 @@ namespace OscCore
 
         #region Standard Overrides
 
-        public override bool Equals(object obj)
+        public readonly override bool Equals(object? obj)
         {
-            if (obj is uint)
+            return obj switch
             {
-                return FullMessage.Equals((uint) obj);
-            }
-
-            if (obj is OscMidiMessage)
-            {
-                return FullMessage.Equals(((OscMidiMessage) obj).FullMessage);
-            }
-
-            return FullMessage.Equals(obj);
+                uint u => FullMessage.Equals(u),
+                OscMidiMessage m => FullMessage.Equals(m.FullMessage),
+                _ => FullMessage.Equals(obj)
+            };
         }
 
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             return FullMessage.GetHashCode();
         }
@@ -413,12 +408,12 @@ namespace OscCore
 
         #region To String
 
-        public override string ToString()
+        public readonly override string ToString()
         {
             return ToString(CultureInfo.InvariantCulture);
         }
 
-        public string ToString(IFormatProvider provider)
+        public readonly string ToString(IFormatProvider provider)
         {
             if (MessageType != OscMidiMessageType.SystemExclusive)
             {
@@ -445,144 +440,77 @@ namespace OscCore
 
         #region Parse
 
-        public static OscMidiMessage Parse(ref OscStringReader reader, IFormatProvider provider)
+        private static ReadOnlySpan<char> GetNextPart(ref OscStringReader reader, ref OscSerializationToken lastToken, bool expectToken)
         {
-//            string[] pieces = new string[4];
-//
-//            OscSerializationToken token = OscSerializationToken.None; 
-//            
-//            for (int i = 0; i < 4; i++)
-//            {
-//                token = reader.ReadNextToken(out string value);
-//                pieces[i] = value; 
-//                token = reader.ReadNextToken(out string _);
-//            }
-//
-//            if (token != OscSerializationToken.ObjectEnd)
-//            {
-//                throw new Exception($"Invalid color");
-//            }
-//
-//            byte a, r, g, b;
-//            
-//            r = byte.Parse(pieces[0].Trim(), System.Globalization.NumberStyles.None, provider);
-//            g = byte.Parse(pieces[1].Trim(), System.Globalization.NumberStyles.None, provider);
-//            b = byte.Parse(pieces[2].Trim(), System.Globalization.NumberStyles.None, provider);
-//            a = byte.Parse(pieces[3].Trim(), System.Globalization.NumberStyles.None, provider);
-//
-//            return OscColor.FromArgb(a, r, g, b);
-//            
-//            return new OscMidiMessage(0, OscMidiMessageType.ControlChange, 0, 0); 
+            if (lastToken == OscSerializationToken.ObjectEnd)
+            {
+                if (expectToken)
+                    throw new Exception($"Not a midi message");
+                else
+                    return [];
+            }
 
-            List<string> parts = new List<string>();
+            reader.ReadNextToken(out var value);
+            lastToken = reader.ReadNextToken(out _);
+            return value;
+        }
 
+        public static OscMidiMessage Parse(ref OscStringReader reader, IFormatProvider? provider)
+        {
             OscSerializationToken token = OscSerializationToken.None;
 
-            do
-            {
-                token = reader.ReadNextToken(out string value);
-                parts.Add(value);
-                token = reader.ReadNextToken(out string _);
-            }
-            while (token != OscSerializationToken.ObjectEnd);
-
-            if (parts.Count < 4)
-            {
-                throw new Exception($"Not a midi message '{parts.Count}'");
-            }
-
-            int index = 0;
             byte portID = byte.Parse(
-                parts[index++]
-                    .Trim(),
-                provider
-            );
+                GetNextPart(ref reader, ref token, true).Trim(),
+                NumberStyles.None, provider);
 
-            byte statusByte;
             OscMidiMessageType messageType;
-
-            if (byte.TryParse(
-                    parts[index]
-                        .Trim(),
-                    NumberStyles.Integer,
-                    provider,
-                    out statusByte
-                ) == false)
+            var part = GetNextPart(ref reader, ref token, true).Trim();
+            if (byte.TryParse(part, NumberStyles.Integer, provider, out byte statusByte) == false)
             {
-                OscMidiSystemMessageType systemMessage;
-
-                if (Enum.TryParse(
-                    parts[index]
-                        .Trim(),
-                    true,
-                    out systemMessage
-                ))
+                string enumPart = new(part);
+                if (Enum.TryParse(enumPart, true, out OscMidiSystemMessageType systemMessage))
                 {
                     messageType = OscMidiMessageType.SystemExclusive;
-                    statusByte = (byte) ((int) messageType | (int) systemMessage);
-                    index++;
+                    statusByte = (byte)((int)messageType | (int)systemMessage);
+                    //part = GetNextPart(ref reader, ref token, true);
                 }
-                else if (Enum.TryParse(
-                    parts[index]
-                        .Trim(),
-                    true,
-                    out messageType
-                ))
+                else if (Enum.TryParse(enumPart, true, out messageType))
                 {
-                    index++;
                     byte channel = byte.Parse(
-                        parts[index++]
-                            .Trim(),
-                        NumberStyles.Integer,
-                        provider
-                    );
+                        GetNextPart(ref reader, ref token, true).Trim(),
+                        NumberStyles.Integer, provider);
+                    //part = GetNextPart(ref reader, ref token, true);
 
                     if (channel > 15)
-                    {
                         throw new ArgumentOutOfRangeException(nameof(channel));
-                    }
 
-                    statusByte = (byte) ((int) messageType | channel);
+                    statusByte = (byte)((int)messageType | channel);
 
-                    if (parts.Count < 5)
-                    {
-                        throw new Exception($"Not a midi message '{parts.Count}'");
-                    }
+                    //if (parts.Count < 5)
+                    //    throw new Exception($"Not a midi message '{parts.Count}'");
                 }
                 else
                 {
-                    throw new Exception($"Not a midi message '{parts.Count}'");
+                    throw new Exception($"Not a midi message");
                 }
             }
 
             byte data1 = byte.Parse(
-                parts[index++]
-                    .Trim(),
-                NumberStyles.Integer,
-                provider
-            );
+                GetNextPart(ref reader, ref token, true).Trim(),
+                NumberStyles.Integer, provider);
 
             if (data1 > 0x7F)
-            {
                 throw new ArgumentOutOfRangeException(nameof(data1));
-            }
 
             byte data2 = byte.Parse(
-                parts[index++]
-                    .Trim(),
-                NumberStyles.Integer,
-                provider
-            );
+                GetNextPart(ref reader, ref token, true).Trim(),
+                NumberStyles.Integer, provider);
 
             if (data2 > 0x7F)
-            {
                 throw new ArgumentOutOfRangeException(nameof(data2));
-            }
 
-            if (index != parts.Count)
-            {
-                throw new Exception($"Not a midi message '{parts.Count}'");
-            }
+            //if (index != parts.Count)
+            //    throw new Exception($"Not a midi message '{parts.Count}'");
 
             return new OscMidiMessage(portID, statusByte, data1, data2);
         }
@@ -608,7 +536,6 @@ namespace OscCore
                 provider
             );
 
-            byte statusByte;
             OscMidiMessageType messageType;
 
             if (byte.TryParse(
@@ -616,20 +543,19 @@ namespace OscCore
                         .Trim(),
                     NumberStyles.Integer,
                     provider,
-                    out statusByte
+                    out byte statusByte
                 ) == false)
             {
-                OscMidiSystemMessageType systemMessage;
 
                 if (Enum.TryParse(
                     parts[index]
                         .Trim(),
                     true,
-                    out systemMessage
+                    out OscMidiSystemMessageType systemMessage
                 ))
                 {
                     messageType = OscMidiMessageType.SystemExclusive;
-                    statusByte = (byte) ((int) messageType | (int) systemMessage);
+                    statusByte = (byte)((int)messageType | (int)systemMessage);
                     index++;
                 }
                 else if (Enum.TryParse(
@@ -652,7 +578,7 @@ namespace OscCore
                         throw new ArgumentOutOfRangeException(nameof(channel));
                     }
 
-                    statusByte = (byte) ((int) messageType | channel);
+                    statusByte = (byte)((int)messageType | channel);
 
                     if (parts.Length < 5)
                     {
@@ -712,7 +638,7 @@ namespace OscCore
             }
             catch
             {
-                message = default(OscMidiMessage);
+                message = default;
 
                 return false;
             }
@@ -728,7 +654,7 @@ namespace OscCore
             }
             catch
             {
-                message = default(OscMidiMessage);
+                message = default;
 
                 return false;
             }

@@ -11,7 +11,7 @@ namespace OscCore
     /// </summary>
     public sealed class OscImpulse
     {
-        public static readonly OscImpulse Value = new OscImpulse();
+        public static readonly OscImpulse Value = new();
 
         private OscImpulse()
         {
@@ -23,19 +23,24 @@ namespace OscCore
         /// </summary>
         /// <param name="str">string to check</param>
         /// <returns>true if the string matches any of the recognised impulse strings else false</returns>
-        public static bool IsImpulse(string str)
+        public static bool IsImpulse(ReadOnlySpan<char> str)
         {
-            bool isTrue = false;
+            if (str.Length > 9)
+                return false;
 
-            isTrue |= "Infinitum".Equals(str, StringComparison.OrdinalIgnoreCase);
+            Span<char> strLower = stackalloc char[str.Length];
+            str.ToLowerInvariant(strLower);
 
-            isTrue |= "Inf".Equals(str, StringComparison.OrdinalIgnoreCase);
+            if (strLower.SequenceEqual("inf"))
+                return true;
+            if (strLower.SequenceEqual("bang"))
+                return true;
+            if (strLower.SequenceEqual("impulse"))
+                return true;
+            if (strLower.SequenceEqual("infinitum"))
+                return true;
 
-            isTrue |= "Bang".Equals(str, StringComparison.OrdinalIgnoreCase);
-
-            isTrue |= "Impulse".Equals(str, StringComparison.OrdinalIgnoreCase);
-
-            return isTrue;
+            return false;
         }
 
         public override string ToString()

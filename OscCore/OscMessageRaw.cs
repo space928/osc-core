@@ -20,15 +20,15 @@ namespace OscCore
         public OscArgument[] Array;
     }
 
-    public class OscMessageRaw : IOscMessage, IEnumerable<OscArgument>
+    public struct OscMessageRaw : IOscMessage, IEnumerable<OscArgument>
     {
         private readonly OscArgument[] arguments;
 
-        private readonly OscReader reader;
+        private OscReader reader;
 
-        public OscArgument this[int index] => arguments[index];
+        public readonly OscArgument this[int index] => arguments[index];
 
-        public OscMessageRaw(ArraySegment<byte> buffer, Uri origin = null, OscTimeTag? timestamp = null)
+        public OscMessageRaw(ArraySegment<byte> buffer, Uri? origin = null, OscTimeTag? timestamp = null)
         {
             Origin = origin;
             Timestamp = timestamp;
@@ -41,20 +41,19 @@ namespace OscCore
 
             if (reader.PeekToken() == OscToken.End)
             {
-                arguments = new OscArgument[0];
+                arguments = [];
 
                 return;
             }
 
             OscTypeTag typeTag = reader.ReadTypeTag();
 
-            arguments = new OscArgument[reader.GetArgumentCount(ref typeTag, out OscToken argumentsType)];
+            arguments = new OscArgument[reader.GetArgumentCount(ref typeTag, out _)];
 
             int argumentsStart = reader.Position;
             int position = argumentsStart;
 
-            OscToken token = OscToken.None;
-
+            OscToken token;
             for (int i = 0; i < arguments.Length; i++)
             {
                 token = typeTag.CurrentToken;
@@ -122,9 +121,9 @@ namespace OscCore
 
         public string Address { get; }
 
-        public int Count => arguments.Length;
+        public readonly int Count => arguments.Length;
 
-        public Uri Origin { get; }
+        public Uri? Origin { get; }
 
         public OscTimeTag? Timestamp { get; }
 
@@ -139,7 +138,7 @@ namespace OscCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool ReadBool(ref OscArgument argument)
+        public readonly bool ReadBool(ref OscArgument argument)
         {
             CheckArgument(ref argument, OscToken.Bool);
 
@@ -187,7 +186,7 @@ namespace OscCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public OscImpulse ReadImpulse(ref OscArgument argument)
+        public readonly OscImpulse ReadImpulse(ref OscArgument argument)
         {
             CheckArgument(ref argument, OscToken.Impulse);
 
@@ -225,13 +224,10 @@ namespace OscCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public string ReadString(ref OscArgument argument)
+        public string? ReadString(ref OscArgument argument)
         {
-            if (argument.IsArray == false &&
-                argument.Type == OscToken.Null)
-            {
+            if (argument.IsArray == false && argument.Type == OscToken.Null)
                 return null;
-            }
 
             CheckArgument(ref argument, OscToken.String);
 
@@ -243,11 +239,8 @@ namespace OscCore
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public OscSymbol ReadSymbol(ref OscArgument argument)
         {
-            if (argument.IsArray == false &&
-                argument.Type == OscToken.Null)
-            {
+            if (argument.IsArray == false && argument.Type == OscToken.Null)
                 return new OscSymbol(null);
-            }
 
             CheckArgument(ref argument, OscToken.Symbol);
 
@@ -267,7 +260,7 @@ namespace OscCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CheckArgument(ref OscArgument argument, OscToken expectedType)
+        private readonly void CheckArgument(ref OscArgument argument, OscToken expectedType)
         {
             if (argument.IsArray)
             {
@@ -298,7 +291,7 @@ namespace OscCore
 
             OscArgument[] arguments = new OscArgument[arrayLength];
 
-            OscToken token = OscToken.None;
+            OscToken token;
 
             for (int i = 0; i < arguments.Length; i++)
             {
@@ -374,13 +367,13 @@ namespace OscCore
         }
 
         /// <inheritdoc />
-        public IEnumerator<OscArgument> GetEnumerator()
+        public readonly IEnumerator<OscArgument> GetEnumerator()
         {
             return (arguments as IEnumerable<OscArgument>).GetEnumerator(); 
         }
 
         /// <inheritdoc />
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }

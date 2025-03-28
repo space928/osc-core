@@ -17,19 +17,19 @@ namespace OscCore
 
         public int Count => messages.Length;
 
-        public Uri Origin { get; }
+        public Uri? Origin { get; }
 
         public OscTimeTag Timestamp { get; }
 
-        public OscBundleRaw(ArraySegment<byte> buffer, Uri origin = null)
+        public OscBundleRaw(ArraySegment<byte> buffer, Uri? origin = null)
         {
             Origin = origin;
 
-            OscReader reader = new OscReader(buffer);
+            OscReader reader = new(buffer);
 
-            List<OscMessageRaw> messages = new List<OscMessageRaw>();
+            List<OscMessageRaw> messages = [];
 
-            ReadMessages(buffer, reader, buffer.Count, messages, out OscTimeTag timestamp);
+            ReadMessages(buffer, ref reader, buffer.Count, messages, out OscTimeTag timestamp);
 
             Timestamp = timestamp;
 
@@ -49,12 +49,7 @@ namespace OscCore
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ReadMessages(
-            ArraySegment<byte> buffer,
-            OscReader reader,
-            int count,
-            List<OscMessageRaw> messages,
-            out OscTimeTag timestamp)
+        private void ReadMessages(ArraySegment<byte> buffer, ref OscReader reader, int count, List<OscMessageRaw> messages, out OscTimeTag timestamp)
         {
             int start = reader.Position;
             int bundleEnd = start + count;
@@ -89,9 +84,9 @@ namespace OscCore
                     throw new OscException(OscError.InvalidBundleMessageLength, "Invalid bundle message length");
                 }
 
-                if (reader.PeekByte() == (byte) '#')
+                if (reader.PeekByte() == (byte)'#')
                 {
-                    ReadMessages(buffer, reader, messageLength, messages, out OscTimeTag _);
+                    ReadMessages(buffer, ref reader, messageLength, messages, out OscTimeTag _);
                 }
                 else
                 {

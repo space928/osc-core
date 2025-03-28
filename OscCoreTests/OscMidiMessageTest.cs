@@ -80,11 +80,11 @@ namespace OscCoreTests
             OscMidiMessage target = new OscMidiMessage(portID, type, channel, data1);
 
             Assert.Equal(expected, target);
-            Assert.Equal(target.PortID, portID);
-            Assert.Equal(target.Channel, channel);
-            Assert.Equal(target.MessageType, type);
-            Assert.Equal(target.Data1, data1);
-            Assert.Equal(target.Data2, 0);
+            Assert.Equal(portID, target.PortID);
+            Assert.Equal(channel, target.Channel);
+            Assert.Equal(type, target.MessageType);
+            Assert.Equal(data1, target.Data1);
+            Assert.Equal(0, target.Data2);
         }
 
         /// <summary>
@@ -102,10 +102,10 @@ namespace OscCoreTests
             OscMidiMessage target = new OscMidiMessage(portID, type, value);
 
             Assert.Equal(expected, target);
-            Assert.Equal(target.PortID, portID);
-            Assert.Equal(target.MessageType, OscMidiMessageType.SystemExclusive);
-            Assert.Equal(target.SystemMessageType, type);
-            Assert.Equal(target.Data14BitValue, value);
+            Assert.Equal(portID, target.PortID);
+            Assert.Equal(OscMidiMessageType.SystemExclusive, target.MessageType);
+            Assert.Equal(type, target.SystemMessageType);
+            Assert.Equal(value, target.Data14BitValue);
         }
 
         /// <summary>
@@ -124,12 +124,12 @@ namespace OscCoreTests
             OscMidiMessage expected = new OscMidiMessage(portID, type, data14BitValue);
 
             Assert.Equal(expected, target);
-            Assert.Equal(target.PortID, portID);
-            Assert.Equal(target.MessageType, OscMidiMessageType.SystemExclusive);
-            Assert.Equal(target.SystemMessageType, type);
-            Assert.Equal(target.Data14BitValue, data14BitValue);
-            Assert.Equal(target.Data1, 0x56);
-            Assert.Equal(target.Data2, 0x26);
+            Assert.Equal(portID, target.PortID);
+            Assert.Equal(OscMidiMessageType.SystemExclusive, target.MessageType);
+            Assert.Equal(type, target.SystemMessageType);
+            Assert.Equal(data14BitValue, target.Data14BitValue);
+            Assert.Equal(0x56, target.Data1);
+            Assert.Equal(0x26, target.Data2);
         }
     }
 }

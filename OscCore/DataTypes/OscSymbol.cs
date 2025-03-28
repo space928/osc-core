@@ -7,37 +7,29 @@ namespace OscCore
     /// <summary>
     ///     Osc symbol
     /// </summary>
-    public struct OscSymbol
+    /// <remarks>
+    ///     Create a new symbol
+    /// </remarks>
+    /// <param name="value">literal string value</param>
+    public readonly struct OscSymbol(string? value)
     {
         /// <summary>
         ///     The string value of the symbol
         /// </summary>
-        public readonly string Value;
+        public readonly string? Value = value;
 
-        /// <summary>
-        ///     Create a new symbol
-        /// </summary>
-        /// <param name="value">literal string value</param>
-        public OscSymbol(string value)
-        {
-            Value = value;
-        }
-
-        public override string ToString()
-        {
-            return Value;
-        }
+        public override string? ToString() => Value;
 
         public override bool Equals(object obj)
         {
+            if (Value == null) 
+                return obj == null;
+
             return obj is OscSymbol symbol
                 ? Value.Equals(symbol.Value)
                 : Value.Equals(obj);
         }
 
-        public override int GetHashCode()
-        {
-            return Value.GetHashCode();
-        }
+        public override int GetHashCode() => Value?.GetHashCode() ?? 0;
     }
 }

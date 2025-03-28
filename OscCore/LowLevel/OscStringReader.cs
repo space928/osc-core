@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -10,13 +11,13 @@ using OscCore.Address;
 
 namespace OscCore.LowLevel
 {
-    public struct OscStringReader
+    public ref struct OscStringReader
     {
-        private readonly string original;
+        private readonly ReadOnlySpan<char> original;
         private int position;
         private readonly int maxPosition;
 
-        public OscStringReader(string value)
+        public OscStringReader(ReadOnlySpan<char> value)
         {
             original = value;
             position = 0;
@@ -26,29 +27,21 @@ namespace OscCore.LowLevel
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ReadAddress(bool validate)
         {
-            OscSerializationToken token = ReadNextToken(out string value);
+            OscSerializationToken token = ReadNextToken(out var value);
 
             if (token != OscSerializationToken.Literal)
-            {
                 throw new OscException(OscError.ErrorParsingOscAdress, $"Unexpected serialization token {token}");
-            }
 
-            string address = value.Trim();
+            string address = value.Trim().ToString();
 
             if (validate != true)
-            {
                 return address;
-            }
 
             if (string.IsNullOrWhiteSpace(address))
-            {
                 throw new Exception("Address was empty");
-            }
 
             if (OscAddress.IsValidAddressPattern(address) == false)
-            {
                 throw new Exception("Invalid address");
-            }
 
             return address;
         }
@@ -56,18 +49,16 @@ namespace OscCore.LowLevel
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadSeparator()
         {
-            OscSerializationToken token = ReadNextToken(out string _);
+            OscSerializationToken token = ReadNextToken(out _);
 
             if (token != OscSerializationToken.Separator)
-            {
                 throw new OscException(OscError.ErrorParsingOscAdress, $"Unexpected serialization token {token}");
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public OscSerializationToken ReadSeparatorOrEnd()
         {
-            OscSerializationToken token = ReadNextToken(out string _);
+            OscSerializationToken token = ReadNextToken(out _);
 
             if (token != OscSerializationToken.Separator &&
                 token != OscSerializationToken.ArrayEnd &&
@@ -81,20 +72,18 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public object[] ReadArguments(IFormatProvider provider, OscSerializationToken endToken)
+        public object[] ReadArguments(IFormatProvider? provider, OscSerializationToken endToken)
         {
-            List<object> arguments = new List<object>();
+            List<object> arguments = [];
 
             OscSerializationToken token;
 
             do
             {
-                token = ReadNextToken(out string value);
+                token = ReadNextToken(out var value);
 
                 if (token == endToken)
-                {
                     break;
-                }
 
                 switch (token)
                 {
@@ -130,25 +119,23 @@ namespace OscCore.LowLevel
             while (token != endToken && token != OscSerializationToken.End);
 
             if (token != endToken)
-            {
                 throw new OscException(OscError.UnexpectedToken, $"Unexpected token {token}");
-            }
 
             return arguments.ToArray();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private object[] ReadArray(IFormatProvider provider)
+        private object[] ReadArray(IFormatProvider? provider)
         {
             OscSerializationToken endToken = OscSerializationToken.ArrayEnd;
 
-            List<object> arguments = new List<object>();
+            List<object> arguments = [];
 
             OscSerializationToken token;
 
             do
             {
-                token = ReadNextToken(out string value);
+                token = ReadNextToken(out var value);
 
                 switch (token)
                 {
@@ -192,73 +179,63 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private object ParseSymbol(string value, IFormatProvider provider)
+        private readonly object ParseSymbol(ReadOnlySpan<char> value, IFormatProvider? provider)
         {
             return new OscSymbol(OscSerializationUtils.Unescape(value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private object ParseObject(string value, IFormatProvider provider)
+        private object ParseObject(ReadOnlySpan<char> value, IFormatProvider? provider)
         {
-            string name = ReadObjectNameToken();
+            var name = ReadObjectNameToken();
 
             if (name.Length == 0)
-            {
                 throw new Exception(@"Malformed object missing type name");
-            }
 
-            string nameLower = name.ToLowerInvariant();
+            // The length here is the maximum expected type length
+            if (name.Length > 5)
+                throw new Exception($@"Unknown object type '{name.ToString()}'");
+            Span<char> nameLower = stackalloc char[name.Length];
+            name.ToLowerInvariant(nameLower);
 
-            switch (nameLower)
+            return nameLower switch
             {
-                case "midi":
-                case "m":
-                    return OscMidiMessage.Parse(ref this, provider);
-                case "time":
-                case "t":
-                    return OscTimeTag.Parse(ref this, provider);
-                case "color":
-                case "c":
-                    return OscColor.Parse(ref this, provider);
-                case "blob":
-                case "b":
-                case "data":
-                case "d":
-                    return ParseBlob(provider);
-                default:
-                    throw new Exception($@"Unknown object type '{name}'");
-            }
+                "midi" or "m" => OscMidiMessage.Parse(ref this, provider),
+                "time" or "t" => OscTimeTag.Parse(ref this, provider),
+                "color" or "c" => OscColor.Parse(ref this, provider),
+                "blob" or "b" or "data" or "d" => ParseBlob(provider),
+                _ => throw new Exception($@"Unknown object type '{name.ToString()}'"),
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private byte[] ParseBlob(IFormatProvider provider)
+        private byte[] ParseBlob(IFormatProvider? provider)
         {
-            OscSerializationToken token = ReadNextToken(out string value);
+            OscSerializationToken token = ReadNextToken(out var value);
 
             if (token == OscSerializationToken.ObjectEnd)
-            {
-                return new byte[0];
-            }
+                return [];
 
             if (token == OscSerializationToken.Literal)
             {
-                string trimmed = value.Trim();
+                var trimmed = value.Trim();
 
                 if (trimmed.StartsWith("64x"))
                 {
-                    byte[] bytes = Convert.FromBase64String(trimmed.Substring(3));
+                    trimmed = trimmed[3..].TrimEnd();
+                    var expectedLength = OscSerializationUtils.FromBase64_ComputeResultLength(trimmed);
+                    byte[] bytes = new byte[expectedLength];
+                    Convert.TryFromBase64Chars(trimmed, bytes, out _);
 
-                    if (ReadNextToken(out string _) != OscSerializationToken.ObjectEnd)
-                    {
+                    if (ReadNextToken(out _) != OscSerializationToken.ObjectEnd)
                         throw new Exception("Expected end of object");
-                    }
 
                     return bytes;
                 }
 
                 if (trimmed.StartsWith("0x"))
                 {
-                    trimmed = trimmed.Substring(2);
+                    trimmed = trimmed[2..];
 
                     if (trimmed.Length % 2 != 0)
                     {
@@ -271,172 +248,145 @@ namespace OscCore.LowLevel
                     byte[] bytes = new byte[length];
 
                     for (int i = 0; i < bytes.Length; i++)
-                    {
-                        bytes[i] = byte.Parse(trimmed.Substring(i * 2, 2), NumberStyles.HexNumber, provider);
-                    }
+                        bytes[i] = OscSerializationUtils.ByteFromHex(trimmed.Slice(i * 2, 2));
 
-                    if (ReadNextToken(out string _) != OscSerializationToken.ObjectEnd)
-                    {
+                    if (ReadNextToken(out _) != OscSerializationToken.ObjectEnd)
                         throw new Exception("Expected end of object");
-                    }
 
                     return bytes;
                 }
             }
 
-            using (MemoryStream stream = new MemoryStream())
+            int pos = 0;
+            byte[] buff;
+            buff = ArrayPool<byte>.Shared.Rent(64);
+
+            while (token != OscSerializationToken.ObjectEnd)
             {
-                while (token != OscSerializationToken.ObjectEnd)
+                if (pos + 1 >= buff.Length)
                 {
-                    stream.WriteByte(byte.Parse(value.Trim(), NumberStyles.AllowLeadingWhite | NumberStyles.AllowTrailingWhite, provider));
-
-                    token = ReadNextToken(out value);
-
-                    if (token == OscSerializationToken.Separator)
-                    {
-                        token = ReadNextToken(out value);
-                    }
+                    var nbuff = ArrayPool<byte>.Shared.Rent(buff.Length << 1);
+                    Array.Copy(buff, nbuff, buff.Length);
+                    ArrayPool<byte>.Shared.Return(buff);
+                    buff = nbuff;
                 }
 
-                return stream.ToArray();
+                buff[pos++] = byte.Parse(value.Trim());
+
+                token = ReadNextToken(out value);
+
+                if (token == OscSerializationToken.Separator)
+                    token = ReadNextToken(out value);
             }
+
+            byte[] returnBuff = new byte[pos];
+            Array.Copy(buff, returnBuff, returnBuff.Length);
+            ArrayPool<byte>.Shared.Return(buff);
+
+            return returnBuff;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private object ParseChar(string value, IFormatProvider provider)
+        private readonly object ParseChar(ReadOnlySpan<char> value, IFormatProvider? provider)
         {
+            // TODO: Avoid the pointless alloc
             string unescapeString = OscSerializationUtils.Unescape(value);
 
             if (unescapeString.Length > 1)
-            {
                 throw new Exception();
-            }
 
-            char c = unescapeString.Trim()[0];
+            char c = unescapeString.AsSpan().Trim()[0];
 
-            return (byte) c;
+            return (byte)c;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private object ParseString(string value, IFormatProvider provider)
+        private readonly object ParseString(ReadOnlySpan<char> value, IFormatProvider? provider)
         {
             return OscSerializationUtils.Unescape(value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private object ParseLiteral(string value, IFormatProvider provider)
+        private readonly object ParseLiteral(ReadOnlySpan<char> value, IFormatProvider? provider)
         {
             long valueInt64;
             float valueFloat;
             double valueDouble;
 
-            string argString = value.Trim();
+            var argString = value.Trim();
 
             if (argString.Length == 0)
-            {
                 throw new Exception("Argument is empty");
-            }
 
             // try to parse a hex value
             if (argString.Length > 2 && argString.StartsWith("0x"))
             {
-                string hexString = argString.Substring(2);
+                var hexString = argString[2..];
 
                 // parse a int32
                 if (hexString.Length <= 8)
                 {
                     if (uint.TryParse(hexString, NumberStyles.HexNumber, provider, out uint valueUInt32))
                     {
-                        return unchecked((int) valueUInt32);
+                        return unchecked((int)valueUInt32);
                     }
                 }
                 // parse a int64
                 else
                 {
                     if (ulong.TryParse(hexString, NumberStyles.HexNumber, provider, out ulong valueUInt64))
-                    {
-                        return unchecked((long) valueUInt64);
-                    }
+                        return unchecked((long)valueUInt64);
                 }
             }
 
             // parse int64
-            if (argString.EndsWith("L"))
-            {
-                if (long.TryParse(argString.Substring(0, argString.Length - 1), NumberStyles.Integer, provider, out valueInt64))
-                {
+            if (argString[^1] == 'L')
+                if (long.TryParse(argString[..^1], NumberStyles.Integer, provider, out valueInt64))
                     return valueInt64;
-                }
-            }
 
             // parse int32
             if (int.TryParse(argString, NumberStyles.Integer, provider, out int valueInt32))
-            {
                 return valueInt32;
-            }
 
             // parse int64
             if (long.TryParse(argString, NumberStyles.Integer, provider, out valueInt64))
-            {
                 return valueInt64;
-            }
 
             // parse double
             if (argString.EndsWith("d"))
-            {
-                if (double.TryParse(argString.Substring(0, argString.Length - 1), NumberStyles.Float, provider, out valueDouble))
-                {
+                if (double.TryParse(argString[..^1], NumberStyles.Float, provider, out valueDouble))
                     return valueDouble;
-                }
-            }
 
             // parse float
             if (argString.EndsWith("f"))
-            {
-                if (float.TryParse(argString.Substring(0, argString.Length - 1), NumberStyles.Float, provider, out valueFloat))
-                {
+                if (float.TryParse(argString[..^1], NumberStyles.Float, provider, out valueFloat))
                     return valueFloat;
-                }
-            }
 
-            if (argString.Equals(float.PositiveInfinity.ToString(provider)))
-            {
+            // TODO: These strings are basically always const...
+            /*if (argString.SequenceEqual(float.PositiveInfinity.ToString(provider)))
                 return float.PositiveInfinity;
-            }
 
-            if (argString.Equals(float.NegativeInfinity.ToString(provider)))
-            {
+            if (argString.SequenceEqual(float.NegativeInfinity.ToString(provider)))
                 return float.NegativeInfinity;
-            }
 
-            if (argString.Equals(float.NaN.ToString(provider)))
-            {
-                return float.NaN;
-            }
+            if (argString.SequenceEqual(float.NaN.ToString(provider)))
+                return float.NaN;*/
 
             // parse float 
             if (float.TryParse(argString, NumberStyles.Float, provider, out valueFloat))
-            {
                 return valueFloat;
-            }
 
             // parse double
             if (double.TryParse(argString, NumberStyles.Float, provider, out valueDouble))
-            {
                 return valueDouble;
-            }
 
             // parse bool
             if (bool.TryParse(argString, out bool valueBool))
-            {
                 return valueBool;
-            }
 
             // parse null 
             if (OscNull.IsNull(argString))
-            {
                 return OscNull.Value;
-            }
 
             // parse impulse/bang
             if (OscImpulse.IsImpulse(argString))
@@ -445,7 +395,7 @@ namespace OscCore.LowLevel
             }
 
             // if all else fails then its a symbol i guess (?!?) 
-            return new OscSymbol(argString);
+            return new OscSymbol(argString.ToString());
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -469,16 +419,14 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public OscSerializationToken ReadNextToken(out string value)
+        public OscSerializationToken ReadNextToken(out ReadOnlySpan<char> value)
         {
             SkipWhiteSpace();
 
             value = null;
 
             if (position >= maxPosition)
-            {
                 return OscSerializationToken.End;
-            }
 
             char @char = original[position];
 
@@ -537,50 +485,39 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private string ReadLiteralToken()
+        private ReadOnlySpan<char> ReadLiteralToken()
         {
             int start = position;
 
-            int index = original.IndexOfAny(LiteralTokenControlChars, position);
+            int index = original[position..].IndexOfAny(LiteralTokenControlChars) + position;
 
-            if (index < 0 || index > maxPosition)
-            {
+            if (index < start || index > maxPosition)
                 index = maxPosition;
-            }
 
             position = index;
 
-            return original.Substring(start, position - start);
+            return original[start..position];
         }
 
-        private static readonly char[] ObjectNameControlChars = {',', ':', ']', '}'};
-        private static readonly char[] LiteralTokenControlChars = {',', ']', '}'};
+        private static readonly char[] ObjectNameControlChars = [ ',', ':', ']', '}' ];
+        private static readonly char[] LiteralTokenControlChars = [ ',', ']', '}' ];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private string ReadObjectNameToken()
+        private ReadOnlySpan<char> ReadObjectNameToken()
         {
             int start = position;
-
             bool valid = true;
+            int index = original[position..].IndexOfAny(ObjectNameControlChars) + start;
 
-            int index = original.IndexOfAny(ObjectNameControlChars, position);
-
-            if (index < 0 || index > maxPosition)
-            {
+            if (index < start || index > maxPosition)
                 index = maxPosition;
-            }
             else
-            {
                 valid = original[index] == ':';
-            }
 
-            string value = original.Substring(start, index - start)
-                .Trim();
+            var value = original[start..index].Trim();
 
             if (valid == false)
-            {
-                throw new OscException(OscError.InvalidObjectName, $"Invalid object name {value}");
-            }
+                throw new OscException(OscError.InvalidObjectName, $"Invalid object name {value.ToString()}");
 
             position = index + 1;
 
@@ -588,7 +525,7 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private string ReadCharToken()
+        private ReadOnlySpan<char> ReadCharToken()
         {
             bool escaped = false;
 
@@ -598,34 +535,29 @@ namespace OscCore.LowLevel
             for (; position < maxPosition; position++)
             {
                 char @char = original[position];
-
                 end = position;
 
                 if (escaped)
-                {
                     continue;
-                }
 
                 if (@char == '\\')
                 {
                     escaped = true;
-
                     continue;
                 }
 
                 if (@char == '\'')
                 {
                     position++;
-
                     break;
                 }
             }
 
-            return original.Substring(start, end - start);
+            return original[start..end];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private string ReadStringToken()
+        private ReadOnlySpan<char> ReadStringToken()
         {
             bool escaped = false;
 
@@ -635,43 +567,36 @@ namespace OscCore.LowLevel
             for (; position < maxPosition; position++)
             {
                 char @char = original[position];
-
                 end = position;
 
                 if (escaped)
                 {
                     escaped = false;
-
                     continue;
                 }
 
                 if (@char == '\\')
                 {
                     escaped = true;
-
                     continue;
                 }
 
                 if (@char == '"')
                 {
                     position++;
-
                     break;
                 }
             }
 
-            return original.Substring(start, end - start);
+            return original[start..end];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public char PeekChar()
         {
             int startPosition = position;
-
             SkipWhiteSpace();
-
             char value = original[position];
-
             position = startPosition;
 
             return value;

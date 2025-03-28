@@ -11,21 +11,23 @@ namespace OscCore
     /// </summary>
     public sealed class OscNull
     {
-        public static readonly OscNull Value = new OscNull();
+        public static readonly OscNull Value = new();
 
         private OscNull()
         {
         }
 
-        public static bool IsNull(string str)
+        public static bool IsNull(ReadOnlySpan<char> str)
         {
-            bool isTrue = false;
+            if (str.Length > 4)
+                return false;
 
-            isTrue |= "Null".Equals(str, StringComparison.OrdinalIgnoreCase);
+            Span<char> strLower = stackalloc char[str.Length];
+            str.ToLowerInvariant(strLower);
 
-            isTrue |= "Nil".Equals(str, StringComparison.OrdinalIgnoreCase);
-
-            return isTrue;
+            if (strLower.SequenceEqual("null"))
+                return true;
+            return strLower.SequenceEqual("nil");
         }
 
         public override string ToString()

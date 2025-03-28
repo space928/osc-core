@@ -9,12 +9,13 @@ using OscCore.Address;
 
 namespace OscCore.LowLevel
 {
+    //TODO: Implement a ValueStringBuilder so that this can all live on the stack
     public class OscStringWriter
     {
-        private readonly StringBuilder builder = new StringBuilder();
+        private readonly StringBuilder builder = new();
         private readonly IFormatProvider provider;
 
-        public OscStringWriter(IFormatProvider provider = null)
+        public OscStringWriter(IFormatProvider? provider = null)
         {
             this.provider = provider ?? CultureInfo.InvariantCulture;
         }
@@ -76,7 +77,7 @@ namespace OscCore.LowLevel
 
         public void Write(bool value)
         {
-            builder.Append($"{value.ToString()}");
+            builder.Append($"{value}");
         }
 
         public void Write(byte[] value)
@@ -167,10 +168,10 @@ namespace OscCore.LowLevel
                 case bool value:
                     Write(value);
                     break;
-                case OscNull value:
+                case OscNull:
                     WriteNull();
                     break;
-                case OscImpulse value:
+                case OscImpulse:
                     WriteImpulse();
                     break;
                 case string value:
@@ -374,7 +375,7 @@ namespace OscCore.LowLevel
             }
         }
 
-        public void WriteAddress(string address)
+        public void WriteAddress(string? address)
         {
             builder.Append(address);
         }

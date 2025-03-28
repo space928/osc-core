@@ -93,9 +93,9 @@ namespace OscCoreTests
         [Fact]
         public void OscBundleConstructorTest()
         {
-            OscTimeTag timestamp = new OscTimeTag(14236589681638796952);
-            OscMessage[] messages = {UnitTestHelper.Message_Array_Ints(), UnitTestHelper.Message_Array_Ints()};
-            OscBundle target = new OscBundle(timestamp, messages);
+            OscTimeTag timestamp = new(14236589681638796952);
+            OscPacket[] messages = [new(UnitTestHelper.Message_Array_Ints()), new(UnitTestHelper.Message_Array_Ints())];
+            OscBundle target = new(timestamp, messages);
 
             Assert.Equal(timestamp, target.Timestamp);
             UnitTestHelper.AreEqual(messages, target.ToArray());
@@ -131,22 +131,22 @@ namespace OscCoreTests
         [Fact]
         public void ReadTest()
         {
-            OscTimeTag timestamp = new OscTimeTag(14236589681638796952);
-            OscMessage[] messages = {UnitTestHelper.Message_Array_Ints(), UnitTestHelper.Message_Array_Ints()};
-            OscBundle expected = new OscBundle(timestamp, messages);
+            OscTimeTag timestamp = new(14236589681638796952);
+            OscPacket[] messages = [UnitTestHelper.Message_Array_Ints(), UnitTestHelper.Message_Array_Ints()];
+            OscBundle expected = new(timestamp, messages);
 
             byte[] bytes = expected.ToByteArray();
             int index = 0;
-            int count = bytes.Length;            
+            int count = bytes.Length;
             OscBundle actual;
-            
+
             actual = OscBundle.Read(bytes, index, count);
-            
+
             UnitTestHelper.AreEqual(expected, actual);
 
             //Assert.True(actual.Equals(expected));
         }
-        
+
         /// <summary>
         ///A test for Read
         ///</summary>
@@ -154,30 +154,30 @@ namespace OscCoreTests
         public void ReadOffsetTest()
         {
             Random random = new Random();
-            
+
             for (int i = 0; i < 1000; i++)
             {
                 OscTimeTag timestamp = new OscTimeTag(14236589681638796952);
-                
+
                 List<OscPacket> messages = new List<OscPacket>();
 
                 for (int j = 0; j < 10; j++)
                 {
-                    messages.Add(new OscMessage("/" + j, (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble() ));
+                    messages.Add(new OscMessage("/" + j, (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()));
                 }
 
                 OscBundle expected = new OscBundle(timestamp, messages.ToArray());
 
-                int index = random.Next(1, 32); 
+                int index = random.Next(1, 32);
                 int endPadding = random.Next(0, 32);
-                int count = expected.SizeInBytes; 
-                
-                byte[] bytes = new byte[count + index + endPadding]; 
-                
+                int count = expected.SizeInBytes;
+
+                byte[] bytes = new byte[count + index + endPadding];
+
                 random.NextBytes(bytes);
-                
+
                 expected.ToByteArray().CopyTo(bytes, index);
-                
+
                 OscBundle actual;
 
                 actual = OscBundle.Read(bytes, index, count);
@@ -218,15 +218,15 @@ namespace OscCoreTests
                 OscBundle actual;
                 actual = OscBundle.Read(bytes, index, count);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.InvalidBundleMessageLength);
+                Assert.Equal(OscError.InvalidBundleMessageLength, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -262,15 +262,15 @@ namespace OscCoreTests
                 OscBundle actual;
                 actual = OscBundle.Read(bytes, index, count);
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.ErrorParsingInt32);
+                Assert.Equal(OscError.ErrorParsingInt32, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -283,11 +283,9 @@ namespace OscCoreTests
             bool expected = false;
             foreach (string str in UnitTestHelper.Bundles_Bad)
             {
-                OscBundle bundle = null;
-
                 bool actual;
-                actual = OscBundle.TryParse(str, out bundle);
-	            
+                actual = OscBundle.TryParse(str, out OscBundle bundle);
+
                 Assert.True(expected == actual, $"While parsing bad bundle '{str}'");
             }
         }
@@ -301,11 +299,9 @@ namespace OscCoreTests
             bool expected = true;
             foreach (string str in UnitTestHelper.Bundles_Good)
             {
-                OscBundle bundle = null;
-
                 bool actual;
-                actual = OscBundle.TryParse(str, out bundle);
-	            
+                actual = OscBundle.TryParse(str, out OscBundle bundle);
+
                 Assert.True(expected == actual, $"While parsing good bundle '{str}'");
             }
         }

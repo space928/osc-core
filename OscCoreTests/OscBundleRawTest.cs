@@ -18,19 +18,19 @@ namespace OscCoreTests
             byte[] bytes = UnitTestHelper.DoubleNestedBundleBody;
             OscBundleRaw actual = new OscBundleRaw(new ArraySegment<byte>(bytes, 0, bytes.Length));
 
-            Assert.Equal(actual.Count, 2);
+            Assert.Equal(2, actual.Count);
             
             for (int i = 0; i < actual.Count; i++)
             {
                 OscMessageRaw raw = actual[i];
 
-                Assert.Equal(raw.Address, "/aa");
+                Assert.Equal("/aa", raw.Address);
 
                 OscArgument argument = raw[0];
 
                 int value = raw.ReadInt(ref argument);
 
-                Assert.Equal(value, -1);
+                Assert.Equal(-1, value);
             }
         }
        
@@ -49,7 +49,8 @@ namespace OscCoreTests
             for (int i = 0; i < actual.Count; i++)
             {
                 OscMessageRaw raw = actual[i];
-                OscMessage expectedMessage = expected[i] as OscMessage; 
+                Assert.Equal(OscPacketKind.OscMessage, expected[i].Kind);
+                OscMessage expectedMessage = expected[i].OscMessage; 
                 
                 Assert.Equal(raw.Address, expectedMessage.Address);
 
@@ -85,15 +86,15 @@ namespace OscCoreTests
                 
                 OscBundleRaw actual = new OscBundleRaw(new ArraySegment<byte>(bytes, 0, bytes.Length));
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.InvalidBundleMessageLength);
+                Assert.Equal(OscError.InvalidBundleMessageLength, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
 
@@ -126,15 +127,15 @@ namespace OscCoreTests
 
                 OscBundleRaw actual = new OscBundleRaw(new ArraySegment<byte>(bytes, 0, bytes.Length));
 
-                Assert.True(false, "Exception not thrown");
+                Assert.Fail("Exception not thrown");
             }
             catch (OscException ex)
             {
-                Assert.Equal(ex.OscError, OscError.UnexpectedToken);
+                Assert.Equal(OscError.UnexpectedToken, ex.OscError);
             }
             catch (Exception ex)
             {
-                Assert.True(false, ex.Message);
+                Assert.Fail(ex.Message);
             }
         }
     }

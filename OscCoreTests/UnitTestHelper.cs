@@ -836,17 +836,18 @@ namespace OscCoreTests
 		{
 			Assert.Equal(expected.GetType(), actual.GetType()); // , "Packets are not of the same type");
 
-			if (expected is OscMessage)
+			Assert.Equal(expected.Kind, actual.Kind);
+			switch (expected.Kind)
 			{
-				AreEqual(expected as OscMessage, actual as OscMessage);
-			}
-			else if (expected is OscBundle)
-			{
-				AreEqual(expected as OscBundle, actual as OscBundle);
-			}
-			else
-			{
-				Assert.False(true, "Unexpected packet type"); 
+				case OscPacketKind.OscMessage:
+					AreEqual(expected.OscMessage, actual.OscMessage);
+					break;
+				case OscPacketKind.OscBundle:
+                    AreEqual(expected.OscBundle, actual.OscBundle);
+                    break;
+				default:
+					Assert.Fail("Unexpected packet type");
+					break;
 			}
 		}
 

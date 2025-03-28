@@ -6,19 +6,13 @@ using System.Runtime.CompilerServices;
 
 namespace OscCore.LowLevel
 {
-    public struct OscTypeTag
+    public ref struct OscTypeTag(ReadOnlySpan<char> typeTag)
     {
-        private readonly string typeTag;
+        private readonly ReadOnlySpan<char> typeTag = typeTag;
 
-        public OscTypeTag(string typeTag)
-        {
-            this.typeTag = typeTag;
-            Index = 0;
-        }
+        public readonly OscToken CurrentToken => GetTokenFromTypeTag(Index);
 
-        public OscToken CurrentToken => GetTokenFromTypeTag(Index);
-
-        public int Index { get; private set; }
+        public int Index { get; private set; } = 0;
 
         public OscToken NextToken()
         {
@@ -26,89 +20,62 @@ namespace OscCore.LowLevel
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetArgumentCount(out OscToken arrayType)
+        public readonly int GetArgumentCount(out OscToken arrayType)
         {
             return GetArrayLength(0, out arrayType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetArrayElementCount(out OscToken arrayType)
+        public readonly int GetArrayElementCount(out OscToken arrayType)
         {
             return GetArrayLength(Index + 1, out arrayType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private OscToken GetTokenFromTypeTag(int index)
+        private readonly OscToken GetTokenFromTypeTag(int index)
         {
             if (index == typeTag.Length)
-            {
                 return OscToken.End;
-            }
 
             if (index < 0 || index > typeTag.Length)
-            {
                 throw new ArgumentOutOfRangeException(nameof(index), index, "Index is not a valid part of the type tag");
-            }
 
             char type = typeTag[index];
 
             // ReSharper disable once SwitchStatementMissingSomeCases
-            switch (type)
+            return type switch
             {
-                case 'b':
-                    return OscToken.Blob;
-                case 's':
-                    return OscToken.String;
-                case 'S':
-                    return OscToken.Symbol;
-                case 'i':
-                    return OscToken.Int;
-                case 'h':
-                    return OscToken.Long;
-                case 'f':
-                    return OscToken.Float;
-                case 'd':
-                    return OscToken.Double;
-                case 't':
-                    return OscToken.TimeTag;
-                case 'c':
-                    return OscToken.Char;
-                case 'r':
-                    return OscToken.Color;
-                case 'm':
-                    return OscToken.Midi;
-                case 'T':
-                    return OscToken.True;
-                case 'F':
-                    return OscToken.False;
-                case 'N':
-                    return OscToken.Null;
-                case 'I':
-                    return OscToken.Impulse;
-                case '[':
-                    return OscToken.ArrayStart;
-                case ']':
-                    return OscToken.ArrayEnd;
-                default:
-                    // Unknown argument type
-                    throw new OscException(OscError.UnknownArguemntType, $@"Unknown OSC type '{type}' on argument '{index}'");
-            }
+                'b' => OscToken.Blob,
+                's' => OscToken.String,
+                'S' => OscToken.Symbol,
+                'i' => OscToken.Int,
+                'h' => OscToken.Long,
+                'f' => OscToken.Float,
+                'd' => OscToken.Double,
+                't' => OscToken.TimeTag,
+                'c' => OscToken.Char,
+                'r' => OscToken.Color,
+                'm' => OscToken.Midi,
+                'T' => OscToken.True,
+                'F' => OscToken.False,
+                'N' => OscToken.Null,
+                'I' => OscToken.Impulse,
+                '[' => OscToken.ArrayStart,
+                ']' => OscToken.ArrayEnd,
+                _ => throw new OscException(OscError.UnknownArgumentType, $@"Unknown OSC type '{type}' on argument '{index}'"),// Unknown argument type
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetArrayLength(int index, out OscToken arrayType)
+        private readonly int GetArrayLength(int index, out OscToken arrayType)
         {
             arrayType = OscToken.None;
 
             if (index == typeTag.Length)
-            {
                 return 0;
-            }
 
             if (index < 0 || index > typeTag.Length)
-            {
                 throw new ArgumentOutOfRangeException(nameof(index), index, "Index is not a valid part of the type tag");
-            }
 
             int count = 0;
             int inset = 0;
@@ -127,31 +94,21 @@ namespace OscCore.LowLevel
                     case OscToken.True:
                     case OscToken.False:
                         if (arrayType == OscToken.None)
-                        {
                             arrayType = OscToken.Bool;
-                        }
                         else if (arrayType != OscToken.Bool)
-                        {
                             arrayType = OscToken.MixedTypes;
-                        }
 
                         if (inset == 0)
-                        {
                             count++;
-                        }
 
                         break;
                     case OscToken.Null:
                         if (arrayType != OscToken.String &&
                             arrayType != OscToken.Blob)
-                        {
                             arrayType = OscToken.MixedTypes;
-                        }
 
                         if (inset == 0)
-                        {
                             count++;
-                        }
 
                         break;
                     case OscToken.String:
@@ -167,25 +124,17 @@ namespace OscCore.LowLevel
                     case OscToken.Color:
                     case OscToken.Midi:
                         if (arrayType == OscToken.None)
-                        {
                             arrayType = token;
-                        }
                         else if (arrayType != token)
-                        {
                             arrayType = OscToken.MixedTypes;
-                        }
 
                         if (inset == 0)
-                        {
                             count++;
-                        }
 
                         break;
                     case OscToken.ArrayStart:
                         if (inset == 0)
-                        {
                             count++;
-                        }
 
                         inset++;
                         break;
@@ -193,16 +142,14 @@ namespace OscCore.LowLevel
                         inset--;
 
                         if (inset == -1)
-                        {
                             return count;
-                        }
 
                         break;
                     case OscToken.End:
                         return count;
                     case OscToken.MixedTypes:
                     default:
-                        throw new OscException(OscError.UnknownArguemntType, $@"Unknown OSC type '{token}' on argument '{index}'");
+                        throw new OscException(OscError.UnknownArgumentType, $@"Unknown OSC type '{token}' on argument '{index}'");
                 }
             }
         }

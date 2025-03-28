@@ -15,12 +15,12 @@ namespace OscCore
     ///     This is a poor replacement for System.Drawing.Color but unfortunately many platforms do not support
     ///     the System.Drawing namespace.
     /// </remarks>
-    public struct OscColor
+    public readonly struct OscColor
     {
-        private const int AlphaMask = 0x18;
-        private const int RedMask = 0x10;
-        private const int GreenMask = 0x08;
-        private const int BlueMask = 0;
+        private const int AlphaShift = 0x18;
+        private const int RedShift = 0x10;
+        private const int GreenShift = 0x08;
+        private const int BlueShift = 0;
 
         /// <summary>
         ///     Alpha, red, green and blue components packed into a single 32bit int
@@ -30,22 +30,22 @@ namespace OscCore
         /// <summary>
         ///     Red component
         /// </summary>
-        public byte R => (byte) ((ARGB >> RedMask) & 0xff);
+        public byte R => (byte)((ARGB >> RedShift) & 0xff);
 
         /// <summary>
         ///     Green component
         /// </summary>
-        public byte G => (byte) ((ARGB >> GreenMask) & 0xff);
+        public byte G => (byte)((ARGB >> GreenShift) & 0xff);
 
         /// <summary>
         ///     Blue component
         /// </summary>
-        public byte B => (byte) (ARGB & 0xff);
+        public byte B => (byte)(ARGB & 0xff);
 
         /// <summary>
         ///     Alpha component
         /// </summary>
-        public byte A => (byte) ((ARGB >> AlphaMask) & 0xff);
+        public byte A => (byte)((ARGB >> AlphaShift) & 0xff);
 
         /// <summary>
         ///     Initate a new Osc-Color from an ARGB color value
@@ -58,17 +58,13 @@ namespace OscCore
 
         public override bool Equals(object obj)
         {
-            switch (obj)
+            return obj switch
             {
-                case OscColor oscColor:
-                    return oscColor.ARGB == ARGB;
-                case int intValue:
-                    return intValue == ARGB;
-                case uint uintValue:
-                    return unchecked((int) uintValue) == ARGB;
-            }
-
-            return base.Equals(obj);
+                OscColor oscColor => oscColor.ARGB == ARGB,
+                int intValue => intValue == ARGB,
+                uint uintValue => unchecked((int)uintValue) == ARGB,
+                _ => base.Equals(obj),
+            };
         }
 
         public override string ToString()
@@ -89,7 +85,7 @@ namespace OscCore
         /// <returns>An Osc Color</returns>
         public static OscColor FromArgb(int argb)
         {
-            return new OscColor(unchecked(argb & (int) 0xffffffff));
+            return new OscColor(unchecked(argb & (int)0xffffffff));
         }
 
         /// <summary>
@@ -111,7 +107,13 @@ namespace OscCore
             CheckByte(green, "green");
             CheckByte(blue, "blue");
 
-            return new OscColor(MakeArgb((byte) alpha, (byte) red, (byte) green, (byte) blue));
+            return new OscColor(MakeArgb((byte)alpha, (byte)red, (byte)green, (byte)blue));
+        }
+
+        /// <inheritdoc cref="FromArgb(int, int, int, int)"/>
+        public static OscColor FromArgb(byte alpha, byte red, byte green, byte blue)
+        {
+            return new OscColor(MakeArgb(alpha, red, green, blue));
         }
 
         private static int MakeArgb(
@@ -120,7 +122,7 @@ namespace OscCore
             byte green,
             byte blue)
         {
-            return unchecked((int) ((uint) ((red << RedMask) | (green << GreenMask) | blue | (alpha << AlphaMask)) & 0xffffffff));
+            return unchecked((int)((uint)((red << RedShift) | (green << GreenShift) | blue | (alpha << AlphaShift)) & 0xffffffff));
         }
 
         private static void CheckByte(int value, string name)
@@ -133,50 +135,37 @@ namespace OscCore
             throw new ArgumentException($"The {name} channel has a value of {value}, color channel values must be in the range 0 to {0xff}", name);
         }
 
-        public static OscColor Parse(ref OscStringReader reader, IFormatProvider provider)
+        public static OscColor Parse(ref OscStringReader reader, IFormatProvider? provider)
         {
-            string[] pieces = new string[4];
+            ReadOnlySpan<char> strR, strG, strB, strA;
 
-            OscSerializationToken token = OscSerializationToken.None;
+            OscSerializationToken token;
 
-            for (int i = 0; i < 4; i++)
-            {
-                token = reader.ReadNextToken(out string value);
-                pieces[i] = value;
-                token = reader.ReadNextToken(out string _);
-            }
+            reader.ReadNextToken(out var value);
+            strR = value;
+            reader.ReadNextToken(out _);
+
+            reader.ReadNextToken(out value);
+            strG = value;
+            reader.ReadNextToken(out _);
+
+            reader.ReadNextToken(out value);
+            strB = value;
+            reader.ReadNextToken(out _);
+
+            reader.ReadNextToken(out value);
+            strA = value;
+            token = reader.ReadNextToken(out _);
 
             if (token != OscSerializationToken.ObjectEnd)
-            {
                 throw new Exception("Invalid color");
-            }
 
             byte a, r, g, b;
 
-            r = byte.Parse(
-                pieces[0]
-                    .Trim(),
-                NumberStyles.None,
-                provider
-            );
-            g = byte.Parse(
-                pieces[1]
-                    .Trim(),
-                NumberStyles.None,
-                provider
-            );
-            b = byte.Parse(
-                pieces[2]
-                    .Trim(),
-                NumberStyles.None,
-                provider
-            );
-            a = byte.Parse(
-                pieces[3]
-                    .Trim(),
-                NumberStyles.None,
-                provider
-            );
+            r = byte.Parse(strR.Trim(), NumberStyles.None, provider);
+            g = byte.Parse(strG.Trim(), NumberStyles.None, provider);
+            b = byte.Parse(strB.Trim(), NumberStyles.None, provider);
+            a = byte.Parse(strA.Trim(), NumberStyles.None, provider);
 
             return FromArgb(a, r, g, b);
         }
