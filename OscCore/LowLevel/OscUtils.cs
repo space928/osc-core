@@ -140,9 +140,9 @@ namespace OscCore.LowLevel
 
             foreach (object obj in args)
             {
-                if (obj is object[])
+                if (obj is object[] objArr)
                 {
-                    size += SizeOfObjectArray(obj as object[]);
+                    size += SizeOfObjectArray(objArr);
                 }
                 else if (
                     obj is int ||
@@ -219,9 +219,9 @@ namespace OscCore.LowLevel
             // typetag
             foreach (object obj in args)
             {
-                if (obj is object[])
+                if (obj is object[] objArr)
                 {
-                    size += SizeOfObjectArray_TypeTag(obj as object[]);
+                    size += SizeOfObjectArray_TypeTag(objArr);
                     size += 2; // for the [ ] 
                 }
                 else

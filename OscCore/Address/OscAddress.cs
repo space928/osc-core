@@ -72,7 +72,9 @@ namespace OscCore.Address
         ///     http://opensoundcontrol.org/spec-1_1
         /// </summary>
         /// <param name="address">the address string</param>
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public OscAddress(string address)
+#pragma warning restore CS8618 
         {
             ParseAddress(address);
         }
