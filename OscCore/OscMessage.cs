@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Net;
 using OscCore.Address;
 using OscCore.LowLevel;
 
@@ -91,7 +92,7 @@ namespace OscCore
         /// </summary>
         public OscTimeTag? Timestamp { get; set; }
 
-        public Uri? Origin { get; private set; }
+        public IPEndPoint? Origin { get; private set; }
 
         //public readonly object[] ArgsArray => arguments;
 
@@ -135,7 +136,7 @@ namespace OscCore
         ///     each argument type
         /// </param>
         /// <example>OscMessage message = new OscMessage("/test/test", 1, 2, 3);</example>
-        public OscMessage(Uri origin, string address, params object[] args)
+        public OscMessage(IPEndPoint origin, string address, params object[] args)
         {
             Origin = origin;
             Address = address;
@@ -212,7 +213,7 @@ namespace OscCore
         /// <param name="timeTag">time-tag of parent bundle</param>
         /// <exception cref="OscException"></exception>
         /// <returns>the parsed OSC message or an empty message if their was an error while parsing</returns>
-        public static OscMessage Read(byte[] bytes, int index, int count, Uri? origin = null, OscTimeTag? timeTag = null)
+        public static OscMessage Read(byte[] bytes, int index, int count, IPEndPoint? origin = null, OscTimeTag? timeTag = null)
         {
             ArraySegment<byte> arraySegment = new(bytes, index, count);
 
@@ -221,7 +222,7 @@ namespace OscCore
             return Read(ref reader, count, origin, timeTag);
         }
 
-        public static OscMessage Read(ref OscReader reader, int count, Uri? origin = null, OscTimeTag? timeTag = null)
+        public static OscMessage Read(ref OscReader reader, int count, IPEndPoint? origin = null, OscTimeTag? timeTag = null)
         {
             reader.BeginMessage(count);
 

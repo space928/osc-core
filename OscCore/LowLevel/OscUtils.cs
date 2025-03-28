@@ -55,10 +55,9 @@ namespace OscCore.LowLevel
                     }
                 }
                 // is the argument a color
-                else if (array1[i] is OscColor)
+                else if (array1[i] is OscColor expectedArg)
                 {
-                    OscColor expectedArg = (OscColor) array1[i];
-                    OscColor actualArg = (OscColor) array2[i];
+                    OscColor actualArg = (OscColor)array2[i];
 
                     // check the RGBA values
                     if (expectedArg.R != actualArg.R ||
@@ -177,10 +176,8 @@ namespace OscCore.LowLevel
                         size += nullCount;
                     }
                 }
-                else if (obj is byte[])
+                else if (obj is byte[] value)
                 {
-                    byte[] value = (byte[]) obj;
-
                     // length integer 
                     size += 4;
 

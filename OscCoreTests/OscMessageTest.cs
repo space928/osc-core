@@ -970,7 +970,7 @@ namespace OscCoreTests
         //[DeploymentItem("Rug.Osc.dll")]
         public void OscMessageConstructorTest_OriginAddressArgs()
         {
-            Uri ipEndPoint = new Uri($"udp://{IPAddress.Loopback}:{8001}");
+            IPEndPoint ipEndPoint = new(IPAddress.Loopback, 8001);
 
             string address = "/test";
             byte[] value = { 4, 2 };
@@ -986,7 +986,7 @@ namespace OscCoreTests
         //[DeploymentItem("Rug.Osc.dll")]
         public void OscMessageConstructorTest_OriginAddressArgs_InvalidAddress()
         {
-            Uri ipEndPoint = new Uri($"udp://{IPAddress.Loopback}:{8001}");
+            IPEndPoint ipEndPoint = new (IPAddress.Loopback, 8001);
 
             string address = "test";
             byte[] value = { 4, 2 };
@@ -995,7 +995,7 @@ namespace OscCoreTests
             {
                 OscMessage target = new OscMessage(ipEndPoint, address, value);
 
-                Assert.True(false);
+                Assert.Fail();
             }
             catch (Exception ex)
             {
@@ -1007,7 +1007,7 @@ namespace OscCoreTests
         //[DeploymentItem("Rug.Osc.dll")]
         public void OscMessageConstructorTest_OriginAddressArgs_NoAddress()
         {
-            Uri ipEndPoint = new Uri($"udp://{IPAddress.Loopback}:{8001}");
+            IPEndPoint ipEndPoint = new(IPAddress.Loopback, 8001);
 
             string address = null;
             byte[] value = { 4, 2 };
@@ -1016,7 +1016,7 @@ namespace OscCoreTests
             {
                 OscMessage target = new OscMessage(ipEndPoint, address, value);
 
-                Assert.True(false);
+                Assert.Fail();
             }
             catch (Exception ex)
             {

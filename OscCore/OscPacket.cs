@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE in the project root for license information.
 
 using System;
+using System.Net;
 using System.Runtime.InteropServices;
 using OscCore.LowLevel;
 
@@ -76,7 +77,7 @@ namespace OscCore
         /// <param name="origin">the origin that is the origin of this packet</param>
         /// <param name="timeTag">the time tag asociated with the parent</param>
         /// <returns>the packet</returns>
-        public static OscPacket Read(byte[] bytes, int index, int count, Uri? origin = null, OscTimeTag? timeTag = null)
+        public static OscPacket Read(byte[] bytes, int index, int count, IPEndPoint? origin = null, OscTimeTag? timeTag = null)
         {
             if (bytes[index] == (byte)'#')
                 return new(OscBundle.Read(bytes, index, count, origin));
@@ -84,7 +85,7 @@ namespace OscCore
             return new(OscMessage.Read(bytes, index, count, origin, timeTag));
         }
 
-        public static OscPacket Read(ref OscReader reader, int count, Uri? origin = null, OscTimeTag? timeTag = null)
+        public static OscPacket Read(ref OscReader reader, int count, IPEndPoint? origin = null, OscTimeTag? timeTag = null)
         {
             if (reader.PeekByte() == (byte)'#')
                 return new(OscBundle.Read(ref reader, count, origin));

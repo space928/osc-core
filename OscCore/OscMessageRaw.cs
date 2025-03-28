@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 using System.Runtime.CompilerServices;
 using OscCore.LowLevel;
 
@@ -28,7 +29,7 @@ namespace OscCore
 
         public readonly OscArgument this[int index] => arguments[index];
 
-        public OscMessageRaw(ArraySegment<byte> buffer, Uri? origin = null, OscTimeTag? timestamp = null)
+        public OscMessageRaw(ArraySegment<byte> buffer, IPEndPoint? origin = null, OscTimeTag? timestamp = null)
         {
             Origin = origin;
             Timestamp = timestamp;
@@ -123,7 +124,7 @@ namespace OscCore
 
         public readonly int Count => arguments.Length;
 
-        public Uri? Origin { get; }
+        public IPEndPoint? Origin { get; }
 
         public OscTimeTag? Timestamp { get; }
 

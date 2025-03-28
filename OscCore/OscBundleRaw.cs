@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 using System.Runtime.CompilerServices;
 using OscCore.LowLevel;
 
@@ -17,11 +18,11 @@ namespace OscCore
 
         public int Count => messages.Length;
 
-        public Uri? Origin { get; }
+        public IPEndPoint? Origin { get; }
 
         public OscTimeTag Timestamp { get; }
 
-        public OscBundleRaw(ArraySegment<byte> buffer, Uri? origin = null)
+        public OscBundleRaw(ArraySegment<byte> buffer, IPEndPoint? origin = null)
         {
             Origin = origin;
 

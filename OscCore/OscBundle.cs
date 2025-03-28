@@ -8,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using OscCore.LowLevel;
 
@@ -39,7 +40,7 @@ namespace OscCore
         /// <summary>
         ///     The packet origin
         /// </summary>
-        public Uri? Origin { get; private set; }
+        public IPEndPoint? Origin { get; private set; }
 
         /// <summary>
         ///     The size of the packet in bytes
@@ -83,7 +84,7 @@ namespace OscCore
         /// <param name="origin">the origin of the osc bundle</param>
         /// <param name="timestamp">timestamp</param>
         /// <param name="messages">messages to bundle</param>
-        public OscBundle(Uri origin, OscTimeTag timestamp, params OscPacket[] messages)
+        public OscBundle(IPEndPoint origin, OscTimeTag timestamp, params OscPacket[] messages)
         {
             Origin = origin;
 
@@ -97,7 +98,7 @@ namespace OscCore
         /// <param name="origin">the origin of the osc bundle</param>
         /// <param name="timestamp">timestamp</param>
         /// <param name="messages">messages to bundle</param>
-        public OscBundle(Uri origin, DateTime timestamp, params OscPacket[] messages)
+        public OscBundle(IPEndPoint origin, DateTime timestamp, params OscPacket[] messages)
         {
             Origin = origin;
 
@@ -226,7 +227,7 @@ namespace OscCore
         /// <param name="count">the number of bytes in the bundle</param>
         /// <param name="origin">the origin that is the origin of this bundle</param>
         /// <returns>the bundle</returns>
-        public static OscBundle Read(byte[] bytes, int index, int count, Uri? origin = null)
+        public static OscBundle Read(byte[] bytes, int index, int count, IPEndPoint? origin = null)
         {
             ArraySegment<byte> arraySegment = new(bytes, index, count);
 
@@ -235,7 +236,7 @@ namespace OscCore
             return Read(ref reader, count, origin);
         }
 
-        public static OscBundle Read(ref OscReader reader, int count, Uri? origin = null)
+        public static OscBundle Read(ref OscReader reader, int count, IPEndPoint? origin = null)
         {
             OscBundle bundle = new()
             {
